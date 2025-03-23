@@ -14,6 +14,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 {
     class CompressedIntParametersPlugin : Plugin<CompressedIntParametersPlugin>
     {
+        public override string DisplayName => "Compressed Int Parameters";
+        public override string QualifiedName => "net.narazaka.vrchat.compressed-int-parameters";
+
         protected override void Configure()
         {
             InPhase(BuildPhase.Generating).BeforePlugin("nadena.dev.modular_avatar").Run("Compressed Int Parameters", Pass);
