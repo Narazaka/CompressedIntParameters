@@ -39,6 +39,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 maMergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
                 maMergeAnimator.matchAvatarWriteDefaults = true;
                 maMergeAnimator.animator = GenerateAnimator(ciParameters);
+                Object.DestroyImmediate(ciParameters);
             }
         }
 
