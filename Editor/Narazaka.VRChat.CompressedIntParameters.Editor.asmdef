@@ -1,0 +1,23 @@
+{
+    "name": "Narazaka.VRChat.CompressedIntParameters.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Narazaka.VRChat.CompressedIntParameters",
+        "VRC.SDKBase",
+        "nadena.dev.modular-avatar.core",
+        "nadena.dev.modular-avatar.core.editor",
+        "nadena.dev.ndmf",
+        "nadena.dev.ndmf.vrchat"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
