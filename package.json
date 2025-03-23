@@ -1,0 +1,18 @@
+{
+  "name": "net.narazaka.vrchat.compressed-int-parameters",
+  "version": "1.0.0",
+  "displayName": "Compressed Int Parameters",
+  "description": "Compressed Int Parameters",
+  "author": {
+    "name": "Narazaka",
+    "url": "https://github.com/Narazaka"
+  },
+  "license": "Zlib",
+  "type": "tool",
+  "url" : "https://github.com/Narazaka/CompressedIntParameters.git",
+  "unity": "2022.3",
+  "vpmDependencies": {
+    "com.vrchat.avatars": ">=3.7.5",
+    "com.vrchat.worlds": ">=3.7.5"
+  }
+}
