@@ -125,11 +125,20 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                             new AnimatorStateTransition
                             {
                                 destinationState = null,
-                                hasExitTime = true,
+                                hasExitTime = false,
                                 hasFixedDuration = true,
                                 exitTime = 0,
                                 duration = 0,
                                 isExit = true,
+                                conditions = new AnimatorCondition[]
+                                {
+                                    new AnimatorCondition
+                                    {
+                                        mode = AnimatorConditionMode.If,
+                                        parameter = "IsLocal",
+                                        threshold = 1,
+                                    },
+                                },
                             }
                         },
                     },
