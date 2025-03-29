@@ -55,6 +55,14 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 type = p.syncType == ParameterSyncType.Bool ? AnimatorControllerParameterType.Bool : AnimatorControllerParameterType.Int,
                 defaultBool = p.syncType == ParameterSyncType.Bool && p.defaultValue != 0,
                 defaultInt = Mathf.RoundToInt(p.defaultValue),
+            }).Concat(new AnimatorControllerParameter[]
+            {
+                new AnimatorControllerParameter
+                {
+                    name = "IsLocal",
+                    type = AnimatorControllerParameterType.Bool,
+                    defaultBool = false,
+                },
             }).ToArray();
             return animatorController;
         }
