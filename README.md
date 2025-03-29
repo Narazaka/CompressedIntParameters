@@ -19,6 +19,22 @@ https://github.com/Narazaka/CompressedIntParameters/releases/latest から `net.
 
 `Compressed Int Parameters` をAdd Componentし、`MA Parameters` と同じように使用します。
 
+## Changelog
+
+- 0.1.5
+  - Changelogを追加
+- 0.1.4
+  - Avatar Menu Creator for MA と同じオブジェクトに付けた時に正しく動作しない問題を修正
+- 0.1.3
+  - IsLocalパラメーターが元から無い場合にエラーになる問題を修正
+- 0.1.2
+  - Avatar Optimizer対応
+  - リモートで不要な動作をしないように
+- 0.1.1
+  - Plugin名を指定
+- 0.1.0
+  - リリース
+
 ## License
 
 [Zlib License](LICENSE.txt)

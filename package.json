@@ -10,6 +10,7 @@
   "license": "Zlib",
   "type": "tool",
   "url" : "https://github.com/Narazaka/CompressedIntParameters.git",
+  "changelogUrl": "https://github.com/Narazaka/CompressedIntParameters#changelog",
   "unity": "2022.3",
   "vpmDependencies": {
     "com.vrchat.avatars": ">=3.7.5",
