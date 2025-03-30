@@ -1,7 +1,10 @@
 using nadena.dev.modular_avatar.core;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Narazaka.VRChat.CompressedIntParameters.Editor")]
 
 namespace Narazaka.VRChat.CompressedIntParameters
 {
@@ -9,6 +12,36 @@ namespace Narazaka.VRChat.CompressedIntParameters
     public class CompressedParameterConfig
     {
         internal const float VALUE_EPSILON = 0.000001f;
+
+        public static CompressedParameterConfig From(ParameterConfig parameter, int maxValue)
+        {
+            var reasons = ValidateParameterConfigInput(parameter).ToArray();
+            if (reasons.Any()) throw new InvalidParameterConfigInputException(reasons);
+
+            var compressed = new CompressedParameterConfig
+            {
+                name = parameter.nameOrPrefix,
+                remapTo = parameter.remapTo,
+                internalParameter = parameter.internalParameter,
+                defaultValue = parameter.defaultValue,
+                saved = parameter.saved,
+                hasExplicitDefaultValue = parameter.hasExplicitDefaultValue,
+                maxValue = maxValue,
+            };
+            return compressed;
+        }
+
+        public static IEnumerable<string> ValidateParameterConfigInput(ParameterConfig parameter)
+        {
+            if (parameter.syncType != ParameterSyncType.Int) yield return "syncType = Int";
+            if (parameter.localOnly) yield return "localOnly = false";
+            if (parameter.isPrefix) yield return "isPrefix = false";
+        }
+
+        public class InvalidParameterConfigInputException : Exception
+        {
+            internal InvalidParameterConfigInputException(IEnumerable<string> reasons) : base($"CompressedParameterConfig can only be created from ParameterConfig with: {string.Join(", ", reasons)}") { }
+        }
 
         // ParameterConfig
         // public ParameterConfig parameter;
@@ -62,12 +95,12 @@ namespace Narazaka.VRChat.CompressedIntParameters
             };
         }
 
-        public static float IntBit(int value, int bit)
+        internal static float IntBit(int value, int bit)
         {
             return IntBitBool(value, bit) ? 1 : 0;
         }
 
-        public static bool IntBitBool(int value, int bit)
+        internal static bool IntBitBool(int value, int bit)
         {
             return (value & (1 << bit)) != 0;
         }
