@@ -65,6 +65,22 @@ namespace Narazaka.VRChat.CompressedIntParameters
             if (parameter.isPrefix) yield return "isPrefix = false";
         }
 
+        public IEnumerable<string> ValidateForBuild()
+        {
+            if (string.IsNullOrEmpty(name)) yield return "name is empty";
+            if (type == CompressedParameterType.Float)
+            {
+                if (bits < 1 || bits > 7) yield return $"bits must be 1..7, got {bits}";
+                if (floatMinValue < -1f || floatMinValue > 1f) yield return $"floatMinValue must be in [-1, 1], got {floatMinValue}";
+                if (floatMaxValue < -1f || floatMaxValue > 1f) yield return $"floatMaxValue must be in [-1, 1], got {floatMaxValue}";
+                if (floatMinValue >= floatMaxValue) yield return $"floatMinValue must be less than floatMaxValue, got [{floatMinValue}, {floatMaxValue}]";
+            }
+            else
+            {
+                if (maxValue < 1 || maxValue > 127) yield return $"maxValue must be 1..127, got {maxValue}";
+            }
+        }
+
         public class InvalidParameterConfigInputException : Exception
         {
             internal InvalidParameterConfigInputException(IEnumerable<string> reasons) : base($"CompressedParameterConfig can only be created from ParameterConfig with: {string.Join(", ", reasons)}") { }

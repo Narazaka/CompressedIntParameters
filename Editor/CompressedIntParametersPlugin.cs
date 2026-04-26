@@ -14,12 +14,12 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 {
     class CompressedIntParametersPlugin : Plugin<CompressedIntParametersPlugin>
     {
-        public override string DisplayName => "Compressed Int Parameters";
+        public override string DisplayName => "Compressed Parameters";
         public override string QualifiedName => "net.narazaka.vrchat.compressed-int-parameters";
 
         protected override void Configure()
         {
-            InPhase(BuildPhase.Generating).BeforePlugin("nadena.dev.modular_avatar").AfterPlugin("net.narazaka.vrchat.avatar-menu-creater-for-ma").Run("Compressed Int Parameters", Pass);
+            InPhase(BuildPhase.Generating).BeforePlugin("nadena.dev.modular_avatar").AfterPlugin("net.narazaka.vrchat.avatar-menu-creater-for-ma").Run("Compressed Parameters", Pass);
         }
 
         void Pass(BuildContext ctx)
@@ -32,6 +32,10 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
                 foreach (var p in ciParameters.parameters)
                 {
+                    var errors = p.ValidateForBuild().ToArray();
+                    if (errors.Any()) throw new System.InvalidOperationException(
+                        $"CompressedParameter '{p.name}' validation failed: {string.Join(", ", errors)}");
+
                     maParameters.parameters.AddRange(p.ToParameterConfigs());
                 }
                 

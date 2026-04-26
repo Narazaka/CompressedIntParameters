@@ -178,5 +178,41 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             Assert.Throws<CompressedParameterConfig.InvalidParameterConfigInputException>(
                 () => CompressedParameterConfig.From(src, 5));
         }
+
+        [Test]
+        public void ValidateForBuild_Float_DetectsOutOfRange()
+        {
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "X",
+                bits = 0,
+                floatMinValue = -2f,
+                floatMaxValue = 1f,
+            };
+            var errors = c.ValidateForBuild().ToArray();
+            Assert.IsTrue(errors.Any(e => e.Contains("bits")));
+            Assert.IsTrue(errors.Any(e => e.Contains("floatMinValue")));
+        }
+
+        [Test]
+        public void ValidateForBuild_Int_DetectsOutOfRange()
+        {
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Int,
+                name = "X",
+                maxValue = 200,
+            };
+            var errors = c.ValidateForBuild().ToArray();
+            Assert.IsTrue(errors.Any(e => e.Contains("maxValue")));
+        }
+
+        [Test]
+        public void ValidateForBuild_Valid_NoErrors()
+        {
+            var c = new CompressedParameterConfig { type = CompressedParameterType.Int, name = "Foo", maxValue = 5 };
+            Assert.IsEmpty(c.ValidateForBuild().ToArray());
+        }
     }
 }
