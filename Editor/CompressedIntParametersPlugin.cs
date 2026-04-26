@@ -45,16 +45,23 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         AnimatorController GenerateAnimator(CompressedIntParameters ciParameters)
         {
-            var layers = ciParameters.parameters.Where(p => p.maxValue > 0).SelectMany(p => new[] { MakeLocalLayer(p), MakeRemoteLayer(p) });
+            var layers = ciParameters.parameters
+                .Where(p => p.type == CompressedParameterType.Int ? p.maxValue > 0 : p.bits > 0)
+                .SelectMany(p => p.type == CompressedParameterType.Float
+                    ? new[] { MakeFloatLocalLayer(p), MakeFloatRemoteLayer(p) }
+                    : new[] { MakeLocalLayer(p), MakeRemoteLayer(p) });
             var animatorController = new AnimatorController();
             animatorController.name = ciParameters.name + " Compressed Int Parameters";
             animatorController.layers = layers.ToArray();
             animatorController.parameters = ciParameters.parameters.SelectMany(p => p.ToParameterConfigs()).Select(p => new AnimatorControllerParameter
             {
                 name = p.nameOrPrefix,
-                type = p.syncType == ParameterSyncType.Bool ? AnimatorControllerParameterType.Bool : AnimatorControllerParameterType.Int,
+                type = p.syncType == ParameterSyncType.Bool ? AnimatorControllerParameterType.Bool
+                    : p.syncType == ParameterSyncType.Float ? AnimatorControllerParameterType.Float
+                    : AnimatorControllerParameterType.Int,
                 defaultBool = p.syncType == ParameterSyncType.Bool && p.defaultValue != 0,
-                defaultInt = Mathf.RoundToInt(p.defaultValue),
+                defaultInt = p.syncType == ParameterSyncType.Int ? Mathf.RoundToInt(p.defaultValue) : 0,
+                defaultFloat = p.syncType == ParameterSyncType.Float ? p.defaultValue : 0f,
             }).Concat(new AnimatorControllerParameter[]
             {
                 new AnimatorControllerParameter
@@ -186,6 +193,122 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             };
             return layer;
         }
+
+        AnimatorControllerLayer MakeFloatLocalLayer(CompressedParameterConfig p)
+        {
+            var bits = p.bits;
+            var stepCount = CompressedParameterConfig.FloatStepCount(bits);
+            var step = CompressedParameterConfig.FloatStep(bits, p.floatMinValue, p.floatMaxValue);
+
+            float ThresholdLow(int i) => p.floatMinValue + (i - 0.5f) * step;
+            float ThresholdHigh(int i) => p.floatMinValue + (i + 0.5f) * step;
+
+            var states = Enumerable.Range(0, stepCount).Select(index =>
+            {
+                var transitions = new List<AnimatorStateTransition>();
+                if (index > 0) transitions.Add(new AnimatorStateTransition
+                {
+                    destinationState = null,
+                    hasExitTime = false,
+                    hasFixedDuration = true,
+                    exitTime = 0,
+                    duration = 0,
+                    isExit = true,
+                    conditions = new[] { new AnimatorCondition { mode = AnimatorConditionMode.Less, parameter = p.name, threshold = ThresholdLow(index) } },
+                });
+                if (index < stepCount - 1) transitions.Add(new AnimatorStateTransition
+                {
+                    destinationState = null,
+                    hasExitTime = false,
+                    hasFixedDuration = true,
+                    exitTime = 0,
+                    duration = 0,
+                    isExit = true,
+                    conditions = new[] { new AnimatorCondition { mode = AnimatorConditionMode.Greater, parameter = p.name, threshold = ThresholdHigh(index) } },
+                });
+
+                var state = new AnimatorState
+                {
+                    name = index.ToString(),
+                    motion = EmptyClip,
+                    hideFlags = HideFlags.HideInHierarchy,
+                    writeDefaultValues = false,
+                    behaviours = new StateMachineBehaviour[]
+                    {
+                        new VRCAvatarParameterDriver
+                        {
+                            localOnly = true,
+                            parameters = Enumerable.Range(0, bits).Select(bit => new VRC_AvatarParameterDriver.Parameter
+                            {
+                                type = VRC_AvatarParameterDriver.ChangeType.Set,
+                                name = p.BitName(bit),
+                                value = CompressedParameterConfig.IntBit(index, bit),
+                            }).ToList(),
+                        },
+                    },
+                    transitions = transitions.ToArray(),
+                };
+                return new ChildAnimatorState { state = state, position = new Vector3(0, index * 100) };
+            }).Concat(new[]
+            {
+                new ChildAnimatorState
+                {
+                    state = new AnimatorState
+                    {
+                        name = "Start",
+                        motion = EmptyClip,
+                        hideFlags = HideFlags.HideInHierarchy,
+                        writeDefaultValues = false,
+                        transitions = new[]
+                        {
+                            new AnimatorStateTransition
+                            {
+                                destinationState = null,
+                                hasExitTime = false,
+                                hasFixedDuration = true,
+                                exitTime = 0,
+                                duration = 0,
+                                isExit = true,
+                                conditions = new[] { new AnimatorCondition { mode = AnimatorConditionMode.If, parameter = "IsLocal", threshold = 1 } },
+                            },
+                        },
+                    },
+                    position = new Vector3(0, -100),
+                }
+            }).ToArray();
+
+            var layerName = p.name + " Compressed Float Parameters [Local]";
+            var stateMachine = new AnimatorStateMachine
+            {
+                name = layerName,
+                hideFlags = HideFlags.HideInHierarchy,
+                anyStatePosition = new Vector3(0, -100),
+                entryPosition = new Vector3(-300, 0),
+                exitPosition = new Vector3(300, 0),
+                states = states,
+                defaultState = states[states.Length - 1].state,
+                entryTransitions = Enumerable.Range(0, stepCount).Select(index =>
+                {
+                    var conds = new List<AnimatorCondition>();
+                    if (index > 0) conds.Add(new AnimatorCondition { mode = AnimatorConditionMode.Greater, parameter = p.name, threshold = ThresholdLow(index) });
+                    if (index < stepCount - 1) conds.Add(new AnimatorCondition { mode = AnimatorConditionMode.Less, parameter = p.name, threshold = ThresholdHigh(index) });
+                    return new AnimatorTransition
+                    {
+                        destinationState = states[index].state,
+                        hideFlags = HideFlags.HideInHierarchy,
+                        conditions = conds.ToArray(),
+                    };
+                }).ToArray(),
+            };
+            return new AnimatorControllerLayer
+            {
+                name = layerName,
+                defaultWeight = 1,
+                stateMachine = stateMachine,
+            };
+        }
+
+        AnimatorControllerLayer MakeFloatRemoteLayer(CompressedParameterConfig p) => throw new System.NotImplementedException();
 
         AnimatorControllerLayer MakeRemoteLayer(CompressedParameterConfig p)
         {
