@@ -55,18 +55,26 @@ namespace Narazaka.VRChat.CompressedIntParameters
 
         public bool hasExplicitDefaultValue;
 
+        // type discriminator (default = Int で既存データ互換)
+        public CompressedParameterType type;
+
         // compressed
         public int maxValue = 1;
 
-        public int bits => Bits(maxValue);
+        // Float 専用 (Phase 1)
+        public int bits = 4;
+        public float floatMinValue = -1f;
+        public float floatMaxValue = 1f;
+
         public static int Bits(int maxValue) => maxValue == 0 ? 0 : Mathf.CeilToInt(Mathf.Log(maxValue + 1, 2));
 
         public IEnumerable<ParameterConfig> ToParameterConfigs()
         {
             if (maxValue == 0) yield break;
             var defaultValueInt = Mathf.RoundToInt(defaultValue);
+            var intBits = Bits(maxValue);
 
-            for (int i = 0; i < bits; i++)
+            for (int i = 0; i < intBits; i++)
             {
                 yield return new ParameterConfig
                 {

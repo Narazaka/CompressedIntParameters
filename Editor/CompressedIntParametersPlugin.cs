@@ -69,7 +69,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         AnimatorControllerLayer MakeLocalLayer(CompressedParameterConfig p)
         {
-            var bits = p.bits;
+            var bits = CompressedParameterConfig.Bits(p.maxValue);
             var states = Enumerable.Range(0, p.maxValue + 1).Select(value =>
             {
                 var state = new AnimatorState
@@ -189,7 +189,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         AnimatorControllerLayer MakeRemoteLayer(CompressedParameterConfig p)
         {
-            var bits = p.bits;
+            var bits = CompressedParameterConfig.Bits(p.maxValue);
             var states = Enumerable.Range(0, p.maxValue + 1).Select(value =>
             {
                 var state = new AnimatorState
