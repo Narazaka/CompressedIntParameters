@@ -38,6 +38,33 @@ namespace Narazaka.VRChat.CompressedIntParameters
             if (parameter.isPrefix) yield return "isPrefix = false";
         }
 
+        public static CompressedParameterConfig From(ParameterConfig parameter, int bits, float minValue = -1f, float maxValue = 1f)
+        {
+            var reasons = ValidateFloatParameterConfigInput(parameter).ToArray();
+            if (reasons.Any()) throw new InvalidParameterConfigInputException(reasons);
+
+            return new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = parameter.nameOrPrefix,
+                remapTo = parameter.remapTo,
+                internalParameter = parameter.internalParameter,
+                defaultValue = parameter.defaultValue,
+                saved = parameter.saved,
+                hasExplicitDefaultValue = parameter.hasExplicitDefaultValue,
+                bits = bits,
+                floatMinValue = minValue,
+                floatMaxValue = maxValue,
+            };
+        }
+
+        public static IEnumerable<string> ValidateFloatParameterConfigInput(ParameterConfig parameter)
+        {
+            if (parameter.syncType != ParameterSyncType.Float) yield return "syncType = Float";
+            if (parameter.localOnly) yield return "localOnly = false";
+            if (parameter.isPrefix) yield return "isPrefix = false";
+        }
+
         public class InvalidParameterConfigInputException : Exception
         {
             internal InvalidParameterConfigInputException(IEnumerable<string> reasons) : base($"CompressedParameterConfig can only be created from ParameterConfig with: {string.Join(", ", reasons)}") { }

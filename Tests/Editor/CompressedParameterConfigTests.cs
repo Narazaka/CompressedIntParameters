@@ -141,5 +141,42 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             Assert.AreEqual(7, c.defaultValue);
             Assert.IsTrue(c.saved);
         }
+
+        [Test]
+        public void From_Float_ValidParameterConfig_ReturnsCompressedConfig()
+        {
+            var src = new ParameterConfig
+            {
+                nameOrPrefix = "Pitch",
+                syncType = ParameterSyncType.Float,
+                defaultValue = 0.5f,
+                saved = false,
+                localOnly = false,
+                isPrefix = false,
+            };
+            var c = CompressedParameterConfig.From(src, 4, -1f, 1f);
+            Assert.AreEqual(CompressedParameterType.Float, c.type);
+            Assert.AreEqual("Pitch", c.name);
+            Assert.AreEqual(4, c.bits);
+            Assert.AreEqual(-1f, c.floatMinValue);
+            Assert.AreEqual(1f, c.floatMaxValue);
+            Assert.AreEqual(0.5f, c.defaultValue);
+        }
+
+        [Test]
+        public void From_Float_RejectsIntSyncType()
+        {
+            var src = new ParameterConfig { syncType = ParameterSyncType.Int };
+            Assert.Throws<CompressedParameterConfig.InvalidParameterConfigInputException>(
+                () => CompressedParameterConfig.From(src, 4, -1f, 1f));
+        }
+
+        [Test]
+        public void From_Int_RejectsFloatSyncType()
+        {
+            var src = new ParameterConfig { syncType = ParameterSyncType.Float };
+            Assert.Throws<CompressedParameterConfig.InvalidParameterConfigInputException>(
+                () => CompressedParameterConfig.From(src, 5));
+        }
     }
 }
