@@ -42,6 +42,40 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
         }
 
         [Test]
+        public void FloatStepCount_Returns2PowBits()
+        {
+            Assert.AreEqual(2, CompressedParameterConfig.FloatStepCount(1));
+            Assert.AreEqual(16, CompressedParameterConfig.FloatStepCount(4));
+            Assert.AreEqual(128, CompressedParameterConfig.FloatStepCount(7));
+        }
+
+        [Test]
+        public void FloatStep_TwoEndsInclusive()
+        {
+            Assert.AreEqual(2f / 15f, CompressedParameterConfig.FloatStep(4, -1f, 1f), 1e-6f);
+            Assert.AreEqual(1f / 3f, CompressedParameterConfig.FloatStep(2, 0f, 1f), 1e-6f);
+        }
+
+        [Test]
+        public void FloatToIndex_ClampsToRangeAndRounds()
+        {
+            Assert.AreEqual(0, CompressedParameterConfig.FloatToIndex(-1f, 4, -1f, 1f));
+            Assert.AreEqual(15, CompressedParameterConfig.FloatToIndex(1f, 4, -1f, 1f));
+            var mid = CompressedParameterConfig.FloatToIndex(0f, 4, -1f, 1f);
+            Assert.IsTrue(mid == 7 || mid == 8);
+            Assert.AreEqual(0, CompressedParameterConfig.FloatToIndex(-2f, 4, -1f, 1f));
+            Assert.AreEqual(15, CompressedParameterConfig.FloatToIndex(2f, 4, -1f, 1f));
+        }
+
+        [Test]
+        public void IndexToFloat_LinearMap()
+        {
+            Assert.AreEqual(-1f, CompressedParameterConfig.IndexToFloat(0, 4, -1f, 1f), 1e-6f);
+            Assert.AreEqual(1f, CompressedParameterConfig.IndexToFloat(15, 4, -1f, 1f), 1e-6f);
+            Assert.AreEqual(-1f + 7f * (2f / 15f), CompressedParameterConfig.IndexToFloat(7, 4, -1f, 1f), 1e-6f);
+        }
+
+        [Test]
         public void From_Int_ValidParameterConfig_ReturnsCompressedConfig()
         {
             var src = new ParameterConfig

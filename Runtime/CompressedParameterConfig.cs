@@ -112,5 +112,26 @@ namespace Narazaka.VRChat.CompressedIntParameters
         {
             return (value & (1 << bit)) != 0;
         }
+
+        public static int FloatStepCount(int bits) => 1 << bits;
+
+        public static float FloatStep(int bits, float minValue, float maxValue)
+        {
+            var n = FloatStepCount(bits);
+            return (maxValue - minValue) / (n - 1);
+        }
+
+        public static int FloatToIndex(float value, int bits, float minValue, float maxValue)
+        {
+            var n = FloatStepCount(bits);
+            var clamped = Mathf.Clamp(value, minValue, maxValue);
+            var t = (clamped - minValue) / (maxValue - minValue);
+            return Mathf.Clamp(Mathf.RoundToInt(t * (n - 1)), 0, n - 1);
+        }
+
+        public static float IndexToFloat(int index, int bits, float minValue, float maxValue)
+        {
+            return minValue + index * FloatStep(bits, minValue, maxValue);
+        }
     }
 }
