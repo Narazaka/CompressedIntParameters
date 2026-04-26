@@ -70,6 +70,12 @@ namespace Narazaka.VRChat.CompressedIntParameters
 
         public IEnumerable<ParameterConfig> ToParameterConfigs()
         {
+            if (type == CompressedParameterType.Float) return ToFloatParameterConfigs();
+            return ToIntParameterConfigs();
+        }
+
+        IEnumerable<ParameterConfig> ToIntParameterConfigs()
+        {
             if (maxValue == 0) yield break;
             var defaultValueInt = Mathf.RoundToInt(defaultValue);
             var intBits = Bits(maxValue);
@@ -96,6 +102,40 @@ namespace Narazaka.VRChat.CompressedIntParameters
                 internalParameter = internalParameter,
                 isPrefix = false,
                 syncType = ParameterSyncType.Int,
+                localOnly = true,
+                defaultValue = defaultValue,
+                saved = saved,
+                hasExplicitDefaultValue = hasExplicitDefaultValue,
+            };
+        }
+
+        IEnumerable<ParameterConfig> ToFloatParameterConfigs()
+        {
+            if (bits == 0) yield break;
+            var defaultIndex = FloatToIndex(defaultValue, bits, floatMinValue, floatMaxValue);
+
+            for (int i = 0; i < bits; i++)
+            {
+                yield return new ParameterConfig
+                {
+                    nameOrPrefix = BitName(i),
+                    remapTo = string.IsNullOrEmpty(remapTo) ? remapTo : $"{remapTo}.bit.{i}",
+                    internalParameter = internalParameter,
+                    isPrefix = false,
+                    syncType = ParameterSyncType.Bool,
+                    localOnly = false,
+                    defaultValue = IntBit(defaultIndex, i),
+                    saved = saved,
+                    hasExplicitDefaultValue = hasExplicitDefaultValue,
+                };
+            }
+            yield return new ParameterConfig
+            {
+                nameOrPrefix = name,
+                remapTo = remapTo,
+                internalParameter = internalParameter,
+                isPrefix = false,
+                syncType = ParameterSyncType.Float,
                 localOnly = true,
                 defaultValue = defaultValue,
                 saved = saved,

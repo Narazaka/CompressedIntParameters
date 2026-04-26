@@ -76,6 +76,54 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
         }
 
         [Test]
+        public void ToParameterConfigs_Float_GeneratesBitParamsAndFloat()
+        {
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                defaultValue = 0f,
+                saved = true,
+            };
+            var result = c.ToParameterConfigs().ToArray();
+            Assert.AreEqual(5, result.Length);
+
+            for (int i = 0; i < 4; i++)
+            {
+                Assert.AreEqual($"Smile.bit.{i}", result[i].nameOrPrefix);
+                Assert.AreEqual(ParameterSyncType.Bool, result[i].syncType);
+                Assert.IsFalse(result[i].localOnly);
+            }
+            Assert.AreEqual("Smile", result[4].nameOrPrefix);
+            Assert.AreEqual(ParameterSyncType.Float, result[4].syncType);
+            Assert.IsTrue(result[4].localOnly);
+            Assert.AreEqual(0f, result[4].defaultValue);
+        }
+
+        [Test]
+        public void ToParameterConfigs_Float_DefaultValueBitsMatchQuantization()
+        {
+            // bits=2, min=0, max=1, defaultValue=1.0 -> index = 3 -> bits = 11
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "X",
+                bits = 2,
+                floatMinValue = 0f,
+                floatMaxValue = 1f,
+                defaultValue = 1f,
+            };
+            var result = c.ToParameterConfigs().ToArray();
+            Assert.AreEqual(3, result.Length);
+            Assert.AreEqual(1f, result[0].defaultValue);
+            Assert.AreEqual(1f, result[1].defaultValue);
+            Assert.AreEqual(1f, result[2].defaultValue);
+        }
+
+        [Test]
         public void From_Int_ValidParameterConfig_ReturnsCompressedConfig()
         {
             var src = new ParameterConfig
