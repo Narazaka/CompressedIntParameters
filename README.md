@@ -21,6 +21,8 @@ https://github.com/Narazaka/CompressedIntParameters/releases/latest から `net.
 
 ## Changelog
 
+- 1.1.0-beta.0
+  - float対応
 - 1.0.0
   - `CompressedParameterConfig.From(ParameterConfig parameter, int maxValue)` APIを追加
 - 0.1.5
