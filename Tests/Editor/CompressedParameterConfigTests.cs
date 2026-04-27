@@ -272,17 +272,22 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 defaultValue = 0.25f,
+                hasExplicitDefaultValue = true,
                 saved = true,
                 floatSmoothing = true,
             };
             var result = c.ToParameterConfigs().ToArray();
             Assert.AreEqual(6, result.Length); // 4 bits + 1 float + 1 raw
-            var raw = result.Single(p => p.nameOrPrefix == "Smile.raw");
+            // raw は最後に yield される
+            Assert.AreEqual("Smile.raw", result[5].nameOrPrefix);
+            var raw = result[5];
             Assert.AreEqual(ParameterSyncType.Float, raw.syncType);
             Assert.IsTrue(raw.localOnly);
             Assert.IsFalse(raw.internalParameter);
+            Assert.IsFalse(raw.isPrefix);
             Assert.IsFalse(raw.saved);
             Assert.AreEqual(0.25f, raw.defaultValue);
+            Assert.IsTrue(raw.hasExplicitDefaultValue);
         }
 
         [Test]
