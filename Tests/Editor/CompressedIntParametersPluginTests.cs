@@ -224,6 +224,10 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             Assert.AreEqual("Smile.raw", copy.name);
             // bits=2 なので Set が 2 件 + Copy 1 件 = 計 3 件
             Assert.AreEqual(3, driver0.parameters.Count);
+            // 別の state にも Copy が付くことを確認（per-state バグの予防）
+            var state3 = layer.stateMachine.states.Single(s => s.state.name == "3").state;
+            var driver3 = (VRCAvatarParameterDriver)state3.behaviours[0];
+            Assert.AreEqual(1, driver3.parameters.Count(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy));
         }
 
         [Test]
