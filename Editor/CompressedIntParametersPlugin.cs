@@ -9,10 +9,11 @@ using VRC.SDK3.Avatars.Components;
 using VRC.SDKBase;
 
 [assembly: ExportsPlugin(typeof(Narazaka.VRChat.CompressedIntParameters.Editor.CompressedIntParametersPlugin))]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Narazaka.VRChat.CompressedIntParameters.Tests.Editor")]
 
 namespace Narazaka.VRChat.CompressedIntParameters.Editor
 {
-    class CompressedIntParametersPlugin : Plugin<CompressedIntParametersPlugin>
+    internal class CompressedIntParametersPlugin : Plugin<CompressedIntParametersPlugin>
     {
         public override string DisplayName => "Compressed Parameters";
         public override string QualifiedName => "net.narazaka.vrchat.compressed-int-parameters";
@@ -78,7 +79,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             return animatorController;
         }
 
-        AnimatorControllerLayer MakeLocalLayer(CompressedParameterConfig p)
+        internal AnimatorControllerLayer MakeLocalLayer(CompressedParameterConfig p)
         {
             var bits = CompressedParameterConfig.Bits(p.maxValue);
             var states = Enumerable.Range(0, p.maxValue + 1).Select(value =>
@@ -198,7 +199,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             return layer;
         }
 
-        AnimatorControllerLayer MakeFloatLocalLayer(CompressedParameterConfig p)
+        internal AnimatorControllerLayer MakeFloatLocalLayer(CompressedParameterConfig p)
         {
             var bits = p.bits;
             var stepCount = CompressedParameterConfig.FloatStepCount(bits);
@@ -312,7 +313,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             };
         }
 
-        AnimatorControllerLayer MakeFloatRemoteLayer(CompressedParameterConfig p)
+        internal AnimatorControllerLayer MakeFloatRemoteLayer(CompressedParameterConfig p)
         {
             var bits = p.bits;
             var stepCount = CompressedParameterConfig.FloatStepCount(bits);
@@ -419,7 +420,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             };
         }
 
-        AnimatorControllerLayer MakeRemoteLayer(CompressedParameterConfig p)
+        internal AnimatorControllerLayer MakeRemoteLayer(CompressedParameterConfig p)
         {
             var bits = CompressedParameterConfig.Bits(p.maxValue);
             var states = Enumerable.Range(0, p.maxValue + 1).Select(value =>

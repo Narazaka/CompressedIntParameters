@@ -5,7 +5,9 @@
         "Narazaka.VRChat.CompressedIntParameters",
         "Narazaka.VRChat.CompressedIntParameters.Editor",
         "VRC.SDKBase",
-        "nadena.dev.modular-avatar.core"
+        "nadena.dev.modular-avatar.core",
+        "nadena.dev.ndmf",
+        "VRC.SDK3A"
     ],
     "includePlatforms": [
         "Editor"
@@ -14,7 +16,9 @@
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "VRCSDKBase.dll",
+        "VRCSDK3A.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [
