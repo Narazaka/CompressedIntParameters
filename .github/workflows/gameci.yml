@@ -44,7 +44,7 @@ jobs:
       matrix:
         include:
           - unity: 2022.3.22f1
-            ma: 1.10.0
+            ma: 1.13.0
             vrcsdk-version: 3.7.5
           - unity: 2022.3.22f1
             ma: 1.16.2
