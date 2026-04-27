@@ -6,27 +6,77 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
     [CustomPropertyDrawer(typeof(CompressedParameterConfig))]
     public class CompressedParameterConfigDrawer : PropertyDrawer
     {
+        static readonly string[] FloatPrecisionLabels = new[]
+        {
+            "2æ®µéš (1bit)",
+            "4æ®µéš (2bit)",
+            "8æ®µéš (3bit)",
+            "16æ®µéš (4bit)",
+            "32æ®µéš (5bit)",
+            "64æ®µéš (6bit)",
+            "128æ®µéš (7bit)",
+        };
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             position.height = EditorGUIUtility.singleLineHeight;
+
+            var typeProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.type));
+            var isFloat = typeProp.enumValueIndex == (int)CompressedParameterType.Float;
+
+            // Row 1: name | type | (Int: maxValue + Næ®µéš(Mbit)) or (Float: Næ®µéš(Mbit) popup + min + max)
             var line = position;
-            line.width -= 170 + Spacing * 2;
+            line.width = position.width - 60 - (isFloat ? 100 + 60 + 60 + Spacing * 3 : 110 + 60 + Spacing * 2) - Spacing;
             EditorGUI.PropertyField(line, property.FindPropertyRelative(nameof(CompressedParameterConfig.name)), GUIContent.none);
-            line.x += line.width + Spacing;
-            line.width = 110;
-            EditorGUIUtility.labelWidth = 60;
-            var maxValue = property.FindPropertyRelative(nameof(CompressedParameterConfig.maxValue));
-            EditorGUI.PropertyField(line, maxValue, T.MaxValue.GUIContent);
-            if (maxValue.intValue < 1) maxValue.intValue = 1;
-            if (maxValue.intValue > 127) maxValue.intValue = 127;
+
             line.x += line.width + Spacing;
             line.width = 60;
-            EditorGUI.BeginDisabledGroup(true);
-            EditorGUI.Popup(line, 0, new string[] { $"{CompressedParameterConfig.Bits(maxValue.intValue)}bitInt" });
-            EditorGUI.EndDisabledGroup();
+            EditorGUI.PropertyField(line, typeProp, GUIContent.none);
+
+            line.x += line.width + Spacing;
+            if (isFloat)
+            {
+                line.width = 100;
+                var bitsProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.bits));
+                if (bitsProp.intValue < 1) bitsProp.intValue = 1;
+                if (bitsProp.intValue > 7) bitsProp.intValue = 7;
+                EditorGUI.BeginChangeCheck();
+                var newIndex = EditorGUI.Popup(line, bitsProp.intValue - 1, FloatPrecisionLabels);
+                if (EditorGUI.EndChangeCheck()) bitsProp.intValue = newIndex + 1;
+
+                line.x += line.width + Spacing;
+                line.width = 60;
+                var minProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.floatMinValue));
+                EditorGUIUtility.labelWidth = 25;
+                EditorGUI.PropertyField(line, minProp, T.Min.GUIContent);
+                minProp.floatValue = Mathf.Clamp(minProp.floatValue, -1f, 1f);
+
+                line.x += line.width + Spacing;
+                line.width = 60;
+                var maxProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.floatMaxValue));
+                EditorGUIUtility.labelWidth = 25;
+                EditorGUI.PropertyField(line, maxProp, T.Max.GUIContent);
+                maxProp.floatValue = Mathf.Clamp(maxProp.floatValue, -1f, 1f);
+            }
+            else
+            {
+                line.width = 110;
+                EditorGUIUtility.labelWidth = 60;
+                var maxValue = property.FindPropertyRelative(nameof(CompressedParameterConfig.maxValue));
+                EditorGUI.PropertyField(line, maxValue, T.MaxValue.GUIContent);
+                if (maxValue.intValue < 1) maxValue.intValue = 1;
+                if (maxValue.intValue > 127) maxValue.intValue = 127;
+
+                line.x += line.width + Spacing;
+                line.width = 60;
+                EditorGUI.BeginDisabledGroup(true);
+                EditorGUI.Popup(line, 0, new[] { $"{CompressedParameterConfig.Bits(maxValue.intValue)}bitInt" });
+                EditorGUI.EndDisabledGroup();
+            }
 
             position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
+            // Row 2: remapTo | internalParameter
             line = position;
             line.width -= 95 + Spacing;
             EditorGUIUtility.labelWidth = 95;
@@ -38,6 +88,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
             position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
 
+            // Row 3: defaultValue | saved | synced
             line = position;
             line.width = 100;
             EditorGUIUtility.labelWidth = 45;
@@ -45,7 +96,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             var defaultValue = property.FindPropertyRelative(nameof(CompressedParameterConfig.defaultValue));
             EditorGUI.BeginProperty(line, T.Default.GUIContent, defaultValue);
             EditorGUI.BeginChangeCheck();
-            var newDefaultValue = EditorGUI.TextField(line, T.Default.GUIContent, hasExplicitDefaultValue.boolValue || Mathf.Abs(defaultValue.floatValue) > CompressedParameterConfig.VALUE_EPSILON ? defaultValue.floatValue.ToString() : "");
+            var newDefaultValue = EditorGUI.TextField(line, T.Default.GUIContent,
+                hasExplicitDefaultValue.boolValue || Mathf.Abs(defaultValue.floatValue) > CompressedParameterConfig.VALUE_EPSILON
+                    ? defaultValue.floatValue.ToString() : "");
             if (EditorGUI.EndChangeCheck())
             {
                 if (string.IsNullOrWhiteSpace(newDefaultValue))
@@ -60,6 +113,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 }
             }
             EditorGUI.EndProperty();
+
             line.x += line.width + Spacing;
             line.width = 60;
             ToggleLeft(line, property.FindPropertyRelative(nameof(CompressedParameterConfig.saved)), T.Saved.GUIContent);
@@ -68,9 +122,6 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             EditorGUI.BeginDisabledGroup(true);
             EditorGUI.ToggleLeft(line, T.Synced.GUIContent, true);
             EditorGUI.EndDisabledGroup();
-            line.x += line.width + Spacing;
-            line.width = position.width - 100 - 60 - 60 - Spacing * 3;
-            // ToggleLeft(line, property.FindPropertyRelative("m_overrideAnimatorDefaults"), T.OverrideAnimatorDefaults.GUIContent);
             EditorGUIUtility.labelWidth = 0;
         }
 
@@ -96,13 +147,16 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         static class T
         {
-            public static istring MaxValue = new istring("Max Value", "Å‘å’l");
-            public static istring ChangeNameTo = new istring("Change name to", "–¼‘O‚ğ•ÏX");
-            public static istring AutoRename = new istring("Auto Rename", "©“®ƒŠƒl[ƒ€");
-            public static istring Default = new istring("Default", "‰Šú’l");
-            public static istring Saved = new istring("Saved", "•Û‘¶‚·‚é");
-            public static istring Synced = new istring("Synced", "“¯Šú‚·‚é");
-            public static istring OverrideAnimatorDefaults = new istring("Override Animator Defaults", "ƒAƒjƒ[ƒ^[‚Å‚Ì‰Šú’l‚ğİ’è");
+            public static istring MaxValue = new istring("Max Value", "æœ€å¤§å€¤");
+            public static istring ChangeNameTo = new istring("Change name to", "åå‰ã‚’å¤‰æ›´");
+            public static istring AutoRename = new istring("Auto Rename", "è‡ªå‹•ãƒªãƒãƒ¼ãƒ ");
+            public static istring Default = new istring("Default", "åˆæœŸå€¤");
+            public static istring Saved = new istring("Saved", "ä¿å­˜ã™ã‚‹");
+            public static istring Synced = new istring("Synced", "åŒæœŸã™ã‚‹");
+            public static istring OverrideAnimatorDefaults = new istring("Override Animator Defaults", "ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚¿ãƒ¼ã§ã®åˆæœŸå€¤ã‚’è¨­å®š");
+            public static istring Bits = new istring("Bits", "ãƒ“ãƒƒãƒˆ");
+            public static istring Min = new istring("Min", "æœ€å°");
+            public static istring Max = new istring("Max", "æœ€å¤§");
         }
     }
 }

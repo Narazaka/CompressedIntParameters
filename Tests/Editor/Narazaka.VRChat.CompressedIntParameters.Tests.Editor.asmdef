@@ -1,0 +1,29 @@
+{
+    "name": "Narazaka.VRChat.CompressedIntParameters.Tests.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Narazaka.VRChat.CompressedIntParameters",
+        "Narazaka.VRChat.CompressedIntParameters.Editor",
+        "VRC.SDKBase",
+        "nadena.dev.modular-avatar.core",
+        "nadena.dev.ndmf",
+        "VRC.SDK3A"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll",
+        "VRCSDKBase.dll",
+        "VRCSDK3A.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

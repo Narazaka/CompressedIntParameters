@@ -7,6 +7,7 @@ using VRC.SDKBase;
 
 namespace Narazaka.VRChat.CompressedIntParameters
 {
+    [AddComponentMenu("Narazaka/VRChat/Compressed Parameters")]
     public class CompressedIntParameters : MonoBehaviour, IEditorOnly
     {
         public List<CompressedParameterConfig> parameters = new List<CompressedParameterConfig>();
