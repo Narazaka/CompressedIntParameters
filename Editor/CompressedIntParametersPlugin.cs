@@ -20,7 +20,11 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         protected override void Configure()
         {
-            InPhase(BuildPhase.Generating).BeforePlugin("nadena.dev.modular_avatar").AfterPlugin("net.narazaka.vrchat.avatar-menu-creater-for-ma").Run("Compressed Parameters", Pass);
+            InPhase(BuildPhase.Generating)
+                .BeforePlugin("nadena.dev.modular_avatar")
+                .BeforePlugin("net.narazaka.vrchat.aapma")
+                .AfterPlugin("net.narazaka.vrchat.avatar-menu-creater-for-ma")
+                .Run("Compressed Parameters", Pass);
         }
 
         void Pass(BuildContext ctx)
