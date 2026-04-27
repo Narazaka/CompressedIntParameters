@@ -90,10 +90,10 @@ namespace Narazaka.VRChat.CompressedIntParameters
         // public ParameterConfig parameter;
         public string name;
         public string BitName(int bit) => $"{name}.bit.{bit}";
+        public string remapTo;
         public const string RawSuffix = ".raw";
         public string RawName => name + RawSuffix;
         public string RawRemapTo => string.IsNullOrEmpty(remapTo) ? remapTo : remapTo + RawSuffix;
-        public string remapTo;
         public bool internalParameter;
 
         public float defaultValue;
