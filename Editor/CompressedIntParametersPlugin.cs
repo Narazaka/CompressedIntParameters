@@ -336,7 +336,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                                 new VRC_AvatarParameterDriver.Parameter
                                 {
                                     type = VRC_AvatarParameterDriver.ChangeType.Set,
-                                    name = p.name,
+                                    name = p.floatSmoothing ? p.RawName : p.name,
                                     value = floatValue,
                                 },
                             },

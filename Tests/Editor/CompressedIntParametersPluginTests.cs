@@ -163,5 +163,41 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             var driver3 = (VRCAvatarParameterDriver)state3.behaviours[0];
             Assert.AreEqual(1f, driver3.parameters[0].value, 1e-6f);
         }
+
+        [Test]
+        public void MakeFloatRemoteLayer_SmoothingEnabled_DriverWritesToRawName()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var layer = Plugin.MakeFloatRemoteLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            Assert.AreEqual("Smile.raw", driver0.parameters[0].name);
+        }
+
+        [Test]
+        public void MakeFloatRemoteLayer_SmoothingDisabled_DriverWritesToName()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var layer = Plugin.MakeFloatRemoteLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            Assert.AreEqual("Smile", driver0.parameters[0].name);
+        }
     }
 }
