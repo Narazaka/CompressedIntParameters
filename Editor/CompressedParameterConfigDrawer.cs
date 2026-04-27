@@ -6,6 +6,17 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
     [CustomPropertyDrawer(typeof(CompressedParameterConfig))]
     public class CompressedParameterConfigDrawer : PropertyDrawer
     {
+        static readonly string[] FloatPrecisionLabels = new[]
+        {
+            "2段階 (1bit)",
+            "4段階 (2bit)",
+            "8段階 (3bit)",
+            "16段階 (4bit)",
+            "32段階 (5bit)",
+            "64段階 (6bit)",
+            "128段階 (7bit)",
+        };
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             position.height = EditorGUIUtility.singleLineHeight;
@@ -13,9 +24,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             var typeProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.type));
             var isFloat = typeProp.enumValueIndex == (int)CompressedParameterType.Float;
 
-            // Row 1: name | type | (Int: maxValue + nbit) or (Float: bits + min + max)
+            // Row 1: name | type | (Int: maxValue + N段階(Mbit)) or (Float: N段階(Mbit) popup + min + max)
             var line = position;
-            line.width = position.width - 60 - (isFloat ? 60 + 60 + 60 + Spacing * 3 : 110 + 60 + Spacing * 2) - Spacing;
+            line.width = position.width - 60 - (isFloat ? 100 + 60 + 60 + Spacing * 3 : 110 + 60 + Spacing * 2) - Spacing;
             EditorGUI.PropertyField(line, property.FindPropertyRelative(nameof(CompressedParameterConfig.name)), GUIContent.none);
 
             line.x += line.width + Spacing;
@@ -25,12 +36,13 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             line.x += line.width + Spacing;
             if (isFloat)
             {
-                line.width = 60;
+                line.width = 100;
                 var bitsProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.bits));
-                EditorGUIUtility.labelWidth = 30;
-                EditorGUI.PropertyField(line, bitsProp, T.Bits.GUIContent);
                 if (bitsProp.intValue < 1) bitsProp.intValue = 1;
                 if (bitsProp.intValue > 7) bitsProp.intValue = 7;
+                EditorGUI.BeginChangeCheck();
+                var newIndex = EditorGUI.Popup(line, bitsProp.intValue - 1, FloatPrecisionLabels);
+                if (EditorGUI.EndChangeCheck()) bitsProp.intValue = newIndex + 1;
 
                 line.x += line.width + Spacing;
                 line.width = 60;
