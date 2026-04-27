@@ -214,5 +214,33 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             var c = new CompressedParameterConfig { type = CompressedParameterType.Int, name = "Foo", maxValue = 5 };
             Assert.IsEmpty(c.ValidateForBuild().ToArray());
         }
+
+        [Test]
+        public void RawName_AppendsRawSuffix()
+        {
+            var c = new CompressedParameterConfig { name = "Smile" };
+            Assert.AreEqual("Smile.raw", c.RawName);
+        }
+
+        [Test]
+        public void RawRemapTo_Empty_RemainsEmpty()
+        {
+            var c = new CompressedParameterConfig { name = "Smile", remapTo = "" };
+            Assert.AreEqual("", c.RawRemapTo);
+        }
+
+        [Test]
+        public void RawRemapTo_NonEmpty_AppendsRawSuffix()
+        {
+            var c = new CompressedParameterConfig { name = "Smile", remapTo = "Renamed" };
+            Assert.AreEqual("Renamed.raw", c.RawRemapTo);
+        }
+
+        [Test]
+        public void FloatSmoothing_DefaultsFalse()
+        {
+            var c = new CompressedParameterConfig();
+            Assert.IsFalse(c.floatSmoothing);
+        }
     }
 }
