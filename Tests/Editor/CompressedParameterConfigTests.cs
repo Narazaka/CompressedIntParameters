@@ -242,5 +242,65 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             var c = new CompressedParameterConfig();
             Assert.IsFalse(c.floatSmoothing);
         }
+
+        [Test]
+        public void ToParameterConfigs_Float_SmoothingDisabled_NoRawConfig()
+        {
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                defaultValue = 0f,
+                floatSmoothing = false,
+            };
+            var result = c.ToParameterConfigs().ToArray();
+            Assert.AreEqual(5, result.Length); // 4 bits + 1 float (no raw)
+            Assert.IsFalse(result.Any(p => p.nameOrPrefix == "Smile.raw"));
+        }
+
+        [Test]
+        public void ToParameterConfigs_Float_SmoothingEnabled_AddsRawConfig()
+        {
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                defaultValue = 0.25f,
+                saved = true,
+                floatSmoothing = true,
+            };
+            var result = c.ToParameterConfigs().ToArray();
+            Assert.AreEqual(6, result.Length); // 4 bits + 1 float + 1 raw
+            var raw = result.Single(p => p.nameOrPrefix == "Smile.raw");
+            Assert.AreEqual(ParameterSyncType.Float, raw.syncType);
+            Assert.IsTrue(raw.localOnly);
+            Assert.IsFalse(raw.internalParameter);
+            Assert.IsFalse(raw.saved);
+            Assert.AreEqual(0.25f, raw.defaultValue);
+        }
+
+        [Test]
+        public void ToParameterConfigs_Float_SmoothingEnabled_WithRemapTo_AppendsRawToRemap()
+        {
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                remapTo = "RenamedSmile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var result = c.ToParameterConfigs().ToArray();
+            var raw = result.Single(p => p.nameOrPrefix == "Smile.raw");
+            Assert.AreEqual("RenamedSmile.raw", raw.remapTo);
+        }
     }
 }

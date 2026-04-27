@@ -189,6 +189,21 @@ namespace Narazaka.VRChat.CompressedIntParameters
                 saved = saved,
                 hasExplicitDefaultValue = hasExplicitDefaultValue,
             };
+            if (floatSmoothing)
+            {
+                yield return new ParameterConfig
+                {
+                    nameOrPrefix = RawName,
+                    remapTo = RawRemapTo,
+                    internalParameter = false,
+                    isPrefix = false,
+                    syncType = ParameterSyncType.Float,
+                    localOnly = true,
+                    defaultValue = defaultValue,
+                    saved = false,
+                    hasExplicitDefaultValue = hasExplicitDefaultValue,
+                };
+            }
         }
 
         internal static float IntBit(int value, int bit)
