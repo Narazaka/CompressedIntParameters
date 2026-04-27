@@ -248,5 +248,49 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             Assert.IsFalse(driver0.parameters.Any(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy));
             Assert.AreEqual(2, driver0.parameters.Count); // bits = 2 のみ
         }
+
+#if HAS_AAPMA
+        [Test]
+        public void BuildAAPMASettings_OnlyIncludesFloatSmoothingEnabledParams()
+        {
+            var p1 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var p2 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "NoSmooth",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var p3 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Int,
+                name = "IntParam",
+                maxValue = 5,
+                floatSmoothing = true, // ignored for Int
+            };
+            var settings = CompressedIntParametersPlugin.BuildAAPMASettings(new[] { p1, p2, p3 });
+            Assert.AreEqual(1, settings.Length);
+            Assert.AreEqual(Narazaka.Unity.AAPMA.LogicType.ExponentialSmoothing, settings[0].Type);
+            Assert.AreEqual(Narazaka.Unity.AAPMA.SmoothingTarget.RemoteOnly, settings[0].SmoothingTarget);
+            Assert.AreEqual("Smile.raw", settings[0].Input1.Parameter);
+            Assert.AreEqual(-1f, settings[0].Input1.Min);
+            Assert.AreEqual(1f, settings[0].Input1.Max);
+            Assert.AreEqual("Smile", settings[0].Output.Parameter);
+            Assert.AreEqual(-1f, settings[0].Output.Min);
+            Assert.AreEqual(1f, settings[0].Output.Max);
+            // ExpSmoothAmount は明示しない (AAPMA デフォルト 0.9 が AAPSetting フィールド初期値で適用される)
+            Assert.AreEqual(0.9f, settings[0].ExpSmoothAmount);
+        }
+#endif
     }
 }

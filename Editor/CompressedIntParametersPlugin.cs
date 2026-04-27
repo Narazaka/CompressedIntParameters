@@ -7,6 +7,9 @@ using UnityEditor.Animations;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDKBase;
+#if HAS_AAPMA
+using Narazaka.Unity.AAPMA;
+#endif
 
 [assembly: ExportsPlugin(typeof(Narazaka.VRChat.CompressedIntParameters.Editor.CompressedIntParametersPlugin))]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Narazaka.VRChat.CompressedIntParameters.Tests.Editor")]
@@ -29,6 +32,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         void Pass(BuildContext ctx)
         {
+#if HAS_AAPMA
+            var smoothingParameters = new System.Collections.Generic.List<CompressedParameterConfig>();
+#endif
             foreach (var ciParameters in ctx.AvatarRootObject.GetComponentsInChildren<CompressedIntParameters>())
             {
                 var gameObject = ciParameters.gameObject;
@@ -42,15 +48,62 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                         $"CompressedParameter '{p.name}' validation failed: {string.Join(", ", errors)}");
 
                     maParameters.parameters.AddRange(p.ToParameterConfigs());
+#if HAS_AAPMA
+                    if (p.type == CompressedParameterType.Float && p.floatSmoothing)
+                    {
+                        smoothingParameters.Add(p);
+                    }
+#endif
                 }
-                
+
                 var maMergeAnimator = gameObject.AddComponent<ModularAvatarMergeAnimator>();
                 maMergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
                 maMergeAnimator.matchAvatarWriteDefaults = true;
                 maMergeAnimator.animator = GenerateAnimator(ciParameters);
                 Object.DestroyImmediate(ciParameters);
             }
+
+#if HAS_AAPMA
+            if (smoothingParameters.Count > 0)
+            {
+                var aapmaSettings = BuildAAPMASettings(smoothingParameters);
+                var aapma = ctx.AvatarRootObject.AddComponent<AAPMA>();
+                aapma.LayerType = VRCAvatarDescriptor.AnimLayerType.FX;
+                aapma.Settings = aapmaSettings;
+            }
+#endif
         }
+
+#if HAS_AAPMA
+        internal static AAPSetting[] BuildAAPMASettings(System.Collections.Generic.IEnumerable<CompressedParameterConfig> parameters)
+        {
+            var list = new System.Collections.Generic.List<AAPSetting>();
+            foreach (var p in parameters)
+            {
+                if (p.type != CompressedParameterType.Float) continue;
+                if (!p.floatSmoothing) continue;
+                list.Add(new AAPSetting
+                {
+                    Type = LogicType.ExponentialSmoothing,
+                    Input1 = new AAPParameter
+                    {
+                        Parameter = p.RawName,
+                        Min = p.floatMinValue,
+                        Max = p.floatMaxValue,
+                    },
+                    Output = new AAPParameter
+                    {
+                        Parameter = p.name,
+                        Min = p.floatMinValue,
+                        Max = p.floatMaxValue,
+                    },
+                    SmoothingTarget = SmoothingTarget.RemoteOnly,
+                    // ExpSmoothAmount は AAPSetting のフィールド初期値 (0.9) を使う
+                });
+            }
+            return list.ToArray();
+        }
+#endif
 
         AnimatorController GenerateAnimator(CompressedIntParameters ciParameters)
         {
