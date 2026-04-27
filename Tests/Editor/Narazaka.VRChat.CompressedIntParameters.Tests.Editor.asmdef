@@ -7,7 +7,9 @@
         "VRC.SDKBase",
         "nadena.dev.modular-avatar.core",
         "nadena.dev.ndmf",
-        "VRC.SDK3A"
+        "VRC.SDK3A",
+        "Narazaka.Unity.AAPMA",
+        "Narazaka.Unity.AAPMA.Editor"
     ],
     "includePlatforms": [
         "Editor"
@@ -24,6 +26,12 @@
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "net.narazaka.vrchat.aapma",
+            "expression": "0.2.0",
+            "define": "HAS_AAPMA"
+        }
+    ],
     "noEngineReferences": false
 }
