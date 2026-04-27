@@ -180,6 +180,10 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
             var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
             Assert.AreEqual("Smile.raw", driver0.parameters[0].name);
+            // 別の state も同じ宛先になることを確認（per-state バグの予防）
+            var state3 = layer.stateMachine.states.Single(s => s.state.name == "3").state;
+            var driver3 = (VRCAvatarParameterDriver)state3.behaviours[0];
+            Assert.AreEqual("Smile.raw", driver3.parameters[0].name);
         }
 
         [Test]
