@@ -33,7 +33,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
         void Pass(BuildContext ctx)
         {
 #if HAS_AAPMA
-            var smoothingParameters = new System.Collections.Generic.List<CompressedParameterConfig>();
+            var allParameters = new List<CompressedParameterConfig>();
 #endif
             foreach (var ciParameters in ctx.AvatarRootObject.GetComponentsInChildren<CompressedIntParameters>())
             {
@@ -49,10 +49,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
                     maParameters.parameters.AddRange(p.ToParameterConfigs());
 #if HAS_AAPMA
-                    if (p.type == CompressedParameterType.Float && p.floatSmoothing)
-                    {
-                        smoothingParameters.Add(p);
-                    }
+                    allParameters.Add(p);
 #endif
                 }
 
@@ -64,9 +61,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             }
 
 #if HAS_AAPMA
-            if (smoothingParameters.Count > 0)
+            var aapmaSettings = BuildAAPMASettings(allParameters);
+            if (aapmaSettings.Length > 0)
             {
-                var aapmaSettings = BuildAAPMASettings(smoothingParameters);
                 var aapma = ctx.AvatarRootObject.AddComponent<AAPMA>();
                 aapma.LayerType = VRCAvatarDescriptor.AnimLayerType.FX;
                 aapma.Settings = aapmaSettings;
@@ -75,9 +72,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
         }
 
 #if HAS_AAPMA
-        internal static AAPSetting[] BuildAAPMASettings(System.Collections.Generic.IEnumerable<CompressedParameterConfig> parameters)
+        internal static AAPSetting[] BuildAAPMASettings(IEnumerable<CompressedParameterConfig> parameters)
         {
-            var list = new System.Collections.Generic.List<AAPSetting>();
+            var list = new List<AAPSetting>();
             foreach (var p in parameters)
             {
                 if (p.type != CompressedParameterType.Float) continue;
