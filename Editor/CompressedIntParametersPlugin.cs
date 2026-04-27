@@ -248,7 +248,17 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                                 type = VRC_AvatarParameterDriver.ChangeType.Set,
                                 name = p.BitName(bit),
                                 value = CompressedParameterConfig.IntBit(index, bit),
-                            }).ToList(),
+                            }).Concat(p.floatSmoothing
+                                ? new[]
+                                {
+                                    new VRC_AvatarParameterDriver.Parameter
+                                    {
+                                        type = VRC_AvatarParameterDriver.ChangeType.Copy,
+                                        source = p.name,
+                                        name = p.RawName,
+                                    },
+                                }
+                                : System.Array.Empty<VRC_AvatarParameterDriver.Parameter>()).ToList(),
                         },
                     },
                     transitions = transitions.ToArray(),

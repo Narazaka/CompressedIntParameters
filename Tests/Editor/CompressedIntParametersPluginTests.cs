@@ -203,5 +203,46 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
             Assert.AreEqual("Smile", driver0.parameters[0].name);
         }
+
+        [Test]
+        public void MakeFloatLocalLayer_SmoothingEnabled_DriverHasCopyToRawName()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var layer = Plugin.MakeFloatLocalLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            var copy = driver0.parameters.Single(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy);
+            Assert.AreEqual("Smile", copy.source);
+            Assert.AreEqual("Smile.raw", copy.name);
+            // bits=2 なので Set が 2 件 + Copy 1 件 = 計 3 件
+            Assert.AreEqual(3, driver0.parameters.Count);
+        }
+
+        [Test]
+        public void MakeFloatLocalLayer_SmoothingDisabled_DriverHasNoCopy()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var layer = Plugin.MakeFloatLocalLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            Assert.IsFalse(driver0.parameters.Any(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy));
+            Assert.AreEqual(2, driver0.parameters.Count); // bits = 2 のみ
+        }
     }
 }
