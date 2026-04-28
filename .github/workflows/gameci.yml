@@ -36,7 +36,8 @@ jobs:
         https://vpm.narazaka.net/index.json
       packages: |
         nadena.dev.modular-avatar ${{ matrix.ma }}
-      name: MA=${{ matrix.ma }}
+        ${{ matrix.aapma && format('net.narazaka.vrchat.aapma {0}', matrix.aapma) || '' }}
+      name: MA=${{ matrix.ma }}${{ matrix.aapma && format(' AAPMA={0}', matrix.aapma) || '' }}
       assemblyNames: Narazaka.VRChat.CompressedIntParameters.Tests.Editor
       assemblyFilters: +Narazaka.VRChat.CompressedIntParameters.*,-Narazaka.VRChat.CompressedIntParameters.Tests.*
     strategy:
@@ -49,3 +50,7 @@ jobs:
           - unity: 2022.3.22f1
             ma: 1.16.2
             vrcsdk-version: 3.10.3
+          - unity: 2022.3.22f1
+            ma: 1.16.2
+            vrcsdk-version: 3.10.3
+            aapma: 0.2.0-beta.1
