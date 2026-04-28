@@ -19,6 +19,14 @@ https://github.com/Narazaka/CompressedIntParameters/releases/latest から `net.
 
 `Compressed Int Parameters` をAdd Componentし、`MA Parameters` と同じように使用します。
 
+## AAPMA 連携 (Smoothing)
+
+[AAPMA](https://github.com/Narazaka/AAPMA) (>= 0.2.0-beta.1) がインストールされている環境では、Float Compressed Parameter ごとに「スムージング」チェックボックスが表示されます。
+
+スムージングを有効にすると、リモート側で復元される値（`2^bits` 段階の階段状）に AAPMA の Exponential Smoothing が適用され、滑らかに表示されます。ローカル側ではユーザーの入力がそのまま使われ、ラグは発生しません。
+
+内部的に `<param>.raw` という補助パラメータを使用します（`<param>.bit.0..N-1` と同様の予約 suffix）。同名のパラメータと衝突しないようにご注意ください。
+
 ## Changelog
 
 - 1.1.0-beta.1

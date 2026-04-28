@@ -163,5 +163,206 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             var driver3 = (VRCAvatarParameterDriver)state3.behaviours[0];
             Assert.AreEqual(1f, driver3.parameters[0].value, 1e-6f);
         }
+
+        [Test]
+        public void MakeFloatRemoteLayer_SmoothingEnabled_DriverWritesToRawName()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var layer = Plugin.MakeFloatRemoteLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            Assert.AreEqual("Smile.raw", driver0.parameters[0].name);
+            // 別の state も同じ宛先になることを確認（per-state バグの予防）
+            var state3 = layer.stateMachine.states.Single(s => s.state.name == "3").state;
+            var driver3 = (VRCAvatarParameterDriver)state3.behaviours[0];
+            Assert.AreEqual("Smile.raw", driver3.parameters[0].name);
+        }
+
+        [Test]
+        public void MakeFloatRemoteLayer_SmoothingDisabled_DriverWritesToName()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var layer = Plugin.MakeFloatRemoteLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            Assert.AreEqual("Smile", driver0.parameters[0].name);
+        }
+
+        [Test]
+        public void MakeFloatLocalLayer_SmoothingEnabled_DriverHasCopyToRawName()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var layer = Plugin.MakeFloatLocalLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            var copy = driver0.parameters.Single(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy);
+            Assert.AreEqual("Smile", copy.source);
+            Assert.AreEqual("Smile.raw", copy.name);
+            // bits=2 なので Set が 2 件 + Copy 1 件 = 計 3 件
+            Assert.AreEqual(3, driver0.parameters.Count);
+            // 別の state にも Copy が付くことを確認（per-state バグの予防）
+            var state3 = layer.stateMachine.states.Single(s => s.state.name == "3").state;
+            var driver3 = (VRCAvatarParameterDriver)state3.behaviours[0];
+            Assert.AreEqual(1, driver3.parameters.Count(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy));
+        }
+
+        [Test]
+        public void MakeFloatLocalLayer_SmoothingDisabled_DriverHasNoCopy()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 2,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var layer = Plugin.MakeFloatLocalLayer(p);
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            var driver0 = (VRCAvatarParameterDriver)state0.behaviours[0];
+            Assert.IsFalse(driver0.parameters.Any(prm => prm.type == VRC_AvatarParameterDriver.ChangeType.Copy));
+            Assert.AreEqual(2, driver0.parameters.Count); // bits = 2 のみ
+        }
+
+#if HAS_AAPMA
+        [Test]
+        public void BuildAAPMASettings_OnlyIncludesFloatSmoothingEnabledParams()
+        {
+            var p1 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "Smile",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var p2 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "NoSmooth",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var p3 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Int,
+                name = "IntParam",
+                maxValue = 5,
+                floatSmoothing = true, // ignored for Int
+            };
+            var settings = CompressedIntParametersPlugin.BuildAAPMASettings(new[] { p1, p2, p3 });
+            Assert.AreEqual(1, settings.Length);
+            Assert.AreEqual(Narazaka.Unity.AAPMA.LogicType.ExponentialSmoothing, settings[0].Type);
+            Assert.AreEqual(Narazaka.Unity.AAPMA.SmoothingTarget.RemoteOnly, settings[0].SmoothingTarget);
+            Assert.AreEqual("Smile.raw", settings[0].Input1.Parameter);
+            Assert.AreEqual(-1f, settings[0].Input1.Min);
+            Assert.AreEqual(1f, settings[0].Input1.Max);
+            Assert.AreEqual("Smile", settings[0].Output.Parameter);
+            Assert.AreEqual(-1f, settings[0].Output.Min);
+            Assert.AreEqual(1f, settings[0].Output.Max);
+            // ExpSmoothAmount は明示しない (AAPMA デフォルト 0.9 が AAPSetting フィールド初期値で適用される)
+            Assert.AreEqual(0.9f, settings[0].ExpSmoothAmount);
+        }
+
+        [Test]
+        public void BuildAAPMASettings_MultipleEnabled_PreservesEachParamRange()
+        {
+            // 異なる範囲を持つ 2 つの smoothing 有効パラメータ → 2 つの AAPSetting が
+            // それぞれ自分の min/max を保持しているか（loop 内で誤って共有しないこと）
+            var p1 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "A",
+                bits = 4,
+                floatMinValue = 0f,
+                floatMaxValue = 1f,
+                floatSmoothing = true,
+            };
+            var p2 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "B",
+                bits = 4,
+                floatMinValue = -0.5f,
+                floatMaxValue = 0.5f,
+                floatSmoothing = true,
+            };
+            var settings = CompressedIntParametersPlugin.BuildAAPMASettings(new[] { p1, p2 });
+            Assert.AreEqual(2, settings.Length);
+
+            var a = settings.Single(s => s.Output.Parameter == "A");
+            Assert.AreEqual("A.raw", a.Input1.Parameter);
+            Assert.AreEqual(0f, a.Input1.Min);
+            Assert.AreEqual(1f, a.Input1.Max);
+            Assert.AreEqual(0f, a.Output.Min);
+            Assert.AreEqual(1f, a.Output.Max);
+
+            var b = settings.Single(s => s.Output.Parameter == "B");
+            Assert.AreEqual("B.raw", b.Input1.Parameter);
+            Assert.AreEqual(-0.5f, b.Input1.Min);
+            Assert.AreEqual(0.5f, b.Input1.Max);
+            Assert.AreEqual(-0.5f, b.Output.Min);
+            Assert.AreEqual(0.5f, b.Output.Max);
+        }
+
+        [Test]
+        public void BuildAAPMASettings_EmptyInput_ReturnsEmpty()
+        {
+            var settings = CompressedIntParametersPlugin.BuildAAPMASettings(new CompressedParameterConfig[0]);
+            Assert.AreEqual(0, settings.Length);
+        }
+
+        [Test]
+        public void BuildAAPMASettings_AllDisabled_ReturnsEmpty()
+        {
+            // すべて smoothing 無効 → 空配列。Pass() 側の if (Length > 0) 分岐の前提を保証
+            var p1 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "A",
+                bits = 4,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+                floatSmoothing = false,
+            };
+            var p2 = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Int,
+                name = "B",
+                maxValue = 5,
+                floatSmoothing = true, // Int なので無視
+            };
+            var settings = CompressedIntParametersPlugin.BuildAAPMASettings(new[] { p1, p2 });
+            Assert.AreEqual(0, settings.Length);
+        }
+#endif
     }
 }

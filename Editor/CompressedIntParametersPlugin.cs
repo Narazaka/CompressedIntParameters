@@ -7,6 +7,9 @@ using UnityEditor.Animations;
 using UnityEngine;
 using VRC.SDK3.Avatars.Components;
 using VRC.SDKBase;
+#if HAS_AAPMA
+using Narazaka.Unity.AAPMA;
+#endif
 
 [assembly: ExportsPlugin(typeof(Narazaka.VRChat.CompressedIntParameters.Editor.CompressedIntParametersPlugin))]
 [assembly: System.Runtime.CompilerServices.InternalsVisibleTo("Narazaka.VRChat.CompressedIntParameters.Tests.Editor")]
@@ -20,11 +23,18 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         protected override void Configure()
         {
-            InPhase(BuildPhase.Generating).BeforePlugin("nadena.dev.modular_avatar").AfterPlugin("net.narazaka.vrchat.avatar-menu-creater-for-ma").Run("Compressed Parameters", Pass);
+            InPhase(BuildPhase.Generating)
+                .BeforePlugin("nadena.dev.modular_avatar")
+                .BeforePlugin("net.narazaka.vrchat.aapma")
+                .AfterPlugin("net.narazaka.vrchat.avatar-menu-creater-for-ma")
+                .Run("Compressed Parameters", Pass);
         }
 
         void Pass(BuildContext ctx)
         {
+#if HAS_AAPMA
+            var allParameters = new List<CompressedParameterConfig>();
+#endif
             foreach (var ciParameters in ctx.AvatarRootObject.GetComponentsInChildren<CompressedIntParameters>())
             {
                 var gameObject = ciParameters.gameObject;
@@ -38,15 +48,59 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                         $"CompressedParameter '{p.name}' validation failed: {string.Join(", ", errors)}");
 
                     maParameters.parameters.AddRange(p.ToParameterConfigs());
+#if HAS_AAPMA
+                    allParameters.Add(p);
+#endif
                 }
-                
+
                 var maMergeAnimator = gameObject.AddComponent<ModularAvatarMergeAnimator>();
                 maMergeAnimator.layerType = VRCAvatarDescriptor.AnimLayerType.FX;
                 maMergeAnimator.matchAvatarWriteDefaults = true;
                 maMergeAnimator.animator = GenerateAnimator(ciParameters);
                 Object.DestroyImmediate(ciParameters);
             }
+
+#if HAS_AAPMA
+            var aapmaSettings = BuildAAPMASettings(allParameters);
+            if (aapmaSettings.Length > 0)
+            {
+                var aapma = ctx.AvatarRootObject.AddComponent<AAPMA>();
+                aapma.LayerType = VRCAvatarDescriptor.AnimLayerType.FX;
+                aapma.Settings = aapmaSettings;
+            }
+#endif
         }
+
+#if HAS_AAPMA
+        internal static AAPSetting[] BuildAAPMASettings(IEnumerable<CompressedParameterConfig> parameters)
+        {
+            var list = new List<AAPSetting>();
+            foreach (var p in parameters)
+            {
+                if (p.type != CompressedParameterType.Float) continue;
+                if (!p.floatSmoothing) continue;
+                list.Add(new AAPSetting
+                {
+                    Type = LogicType.ExponentialSmoothing,
+                    Input1 = new AAPParameter
+                    {
+                        Parameter = p.RawName,
+                        Min = p.floatMinValue,
+                        Max = p.floatMaxValue,
+                    },
+                    Output = new AAPParameter
+                    {
+                        Parameter = p.name,
+                        Min = p.floatMinValue,
+                        Max = p.floatMaxValue,
+                    },
+                    SmoothingTarget = SmoothingTarget.RemoteOnly,
+                    // ExpSmoothAmount は AAPSetting のフィールド初期値 (0.9) を使う
+                });
+            }
+            return list.ToArray();
+        }
+#endif
 
         AnimatorController GenerateAnimator(CompressedIntParameters ciParameters)
         {
@@ -248,7 +302,17 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                                 type = VRC_AvatarParameterDriver.ChangeType.Set,
                                 name = p.BitName(bit),
                                 value = CompressedParameterConfig.IntBit(index, bit),
-                            }).ToList(),
+                            }).Concat(p.floatSmoothing
+                                ? new[]
+                                {
+                                    new VRC_AvatarParameterDriver.Parameter
+                                    {
+                                        type = VRC_AvatarParameterDriver.ChangeType.Copy,
+                                        source = p.name,
+                                        name = p.RawName,
+                                    },
+                                }
+                                : System.Array.Empty<VRC_AvatarParameterDriver.Parameter>()).ToList(),
                         },
                     },
                     transitions = transitions.ToArray(),
@@ -336,7 +400,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                                 new VRC_AvatarParameterDriver.Parameter
                                 {
                                     type = VRC_AvatarParameterDriver.ChangeType.Set,
-                                    name = p.name,
+                                    name = p.floatSmoothing ? p.RawName : p.name,
                                     value = floatValue,
                                 },
                             },

@@ -91,6 +91,9 @@ namespace Narazaka.VRChat.CompressedIntParameters
         public string name;
         public string BitName(int bit) => $"{name}.bit.{bit}";
         public string remapTo;
+        public const string RawSuffix = ".raw";
+        public string RawName => name + RawSuffix;
+        public string RawRemapTo => string.IsNullOrEmpty(remapTo) ? remapTo : remapTo + RawSuffix;
         public bool internalParameter;
 
         public float defaultValue;
@@ -108,6 +111,8 @@ namespace Narazaka.VRChat.CompressedIntParameters
         public int bits = 4;
         public float floatMinValue = -1f;
         public float floatMaxValue = 1f;
+        // Float 専用 (AAPMA インストール時のみ意味を持つ)
+        public bool floatSmoothing;
 
         public static int Bits(int maxValue) => maxValue == 0 ? 0 : Mathf.CeilToInt(Mathf.Log(maxValue + 1, 2));
 
@@ -184,6 +189,21 @@ namespace Narazaka.VRChat.CompressedIntParameters
                 saved = saved,
                 hasExplicitDefaultValue = hasExplicitDefaultValue,
             };
+            if (floatSmoothing)
+            {
+                yield return new ParameterConfig
+                {
+                    nameOrPrefix = RawName,
+                    remapTo = RawRemapTo,
+                    internalParameter = false,
+                    isPrefix = false,
+                    syncType = ParameterSyncType.Float,
+                    localOnly = true,
+                    defaultValue = defaultValue,
+                    saved = false,
+                    hasExplicitDefaultValue = hasExplicitDefaultValue,
+                };
+            }
         }
 
         internal static float IntBit(int value, int bit)
