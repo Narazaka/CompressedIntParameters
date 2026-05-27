@@ -14,33 +14,18 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             var typeProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.type));
             var isFloat = typeProp.enumValueIndex == (int)CompressedParameterType.Float;
 
-            // Row 1: name | type | (Int: maxValue + Mbit) or (Float: stepCount IntField + Mbit(disabled) + min + max)
+            // Row 1 layout:
+            //   Int:   name | maxValue 110 | {N}bit 30 (label) | type 60
+            //   Float: name | Min 60 | Max 60 | stepCount 70 | {N}bit 30 (label) | type 60
             var line = position;
-            line.width = position.width - 60 - (isFloat ? 70 + 70 + 60 + 60 + Spacing * 4 : 110 + 60 + Spacing * 2) - Spacing;
+            line.width = position.width
+                - (isFloat ? 60 + 60 + 70 + 30 + 60 + Spacing * 4 : 110 + 30 + 60 + Spacing * 2)
+                - Spacing;
             EditorGUI.PropertyField(line, property.FindPropertyRelative(nameof(CompressedParameterConfig.name)), GUIContent.none);
-
-            line.x += line.width + Spacing;
-            line.width = 60;
-            EditorGUI.PropertyField(line, typeProp, GUIContent.none);
 
             line.x += line.width + Spacing;
             if (isFloat)
             {
-                line.width = 70;
-                var stepCountProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.stepCount));
-                EditorGUIUtility.labelWidth = 35;
-                EditorGUI.PropertyField(line, stepCountProp, T.Steps.GUIContent);
-                if (stepCountProp.intValue < 2) stepCountProp.intValue = 2;
-                if (stepCountProp.intValue > 128) stepCountProp.intValue = 128;
-
-                line.x += line.width + Spacing;
-                line.width = 70;
-                EditorGUI.BeginDisabledGroup(true);
-                var bitCount = CompressedParameterConfig.Bits(stepCountProp.intValue - 1);
-                EditorGUI.Popup(line, 0, new[] { $"{bitCount}bitFloat" });
-                EditorGUI.EndDisabledGroup();
-
-                line.x += line.width + Spacing;
                 line.width = 60;
                 var minProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.floatMinValue));
                 EditorGUIUtility.labelWidth = 25;
@@ -53,6 +38,23 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 EditorGUIUtility.labelWidth = 25;
                 EditorGUI.PropertyField(line, maxProp, T.Max.GUIContent);
                 maxProp.floatValue = Mathf.Clamp(maxProp.floatValue, -1f, 1f);
+
+                line.x += line.width + Spacing;
+                line.width = 70;
+                var stepCountProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.stepCount));
+                EditorGUIUtility.labelWidth = 35;
+                EditorGUI.PropertyField(line, stepCountProp, T.Steps.GUIContent);
+                if (stepCountProp.intValue < 2) stepCountProp.intValue = 2;
+                if (stepCountProp.intValue > 128) stepCountProp.intValue = 128;
+
+                line.x += line.width + Spacing;
+                line.width = 30;
+                var bitCount = CompressedParameterConfig.Bits(stepCountProp.intValue - 1);
+                EditorGUI.LabelField(line, $"{bitCount}bit");
+
+                line.x += line.width + Spacing;
+                line.width = 60;
+                EditorGUI.PropertyField(line, typeProp, GUIContent.none);
             }
             else
             {
@@ -64,10 +66,12 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 if (maxValue.intValue > 127) maxValue.intValue = 127;
 
                 line.x += line.width + Spacing;
+                line.width = 30;
+                EditorGUI.LabelField(line, $"{CompressedParameterConfig.Bits(maxValue.intValue)}bit");
+
+                line.x += line.width + Spacing;
                 line.width = 60;
-                EditorGUI.BeginDisabledGroup(true);
-                EditorGUI.Popup(line, 0, new[] { $"{CompressedParameterConfig.Bits(maxValue.intValue)}bitInt" });
-                EditorGUI.EndDisabledGroup();
+                EditorGUI.PropertyField(line, typeProp, GUIContent.none);
             }
 
             position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
