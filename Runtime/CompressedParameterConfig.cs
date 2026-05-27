@@ -38,7 +38,7 @@ namespace Narazaka.VRChat.CompressedIntParameters
             if (parameter.isPrefix) yield return "isPrefix = false";
         }
 
-        public static CompressedParameterConfig From(ParameterConfig parameter, int bits, float minValue = -1f, float maxValue = 1f)
+        public static CompressedParameterConfig From(ParameterConfig parameter, int stepCount, float minValue = -1f, float maxValue = 1f)
         {
             var reasons = ValidateFloatParameterConfigInput(parameter).ToArray();
             if (reasons.Any()) throw new InvalidParameterConfigInputException(reasons);
@@ -52,7 +52,7 @@ namespace Narazaka.VRChat.CompressedIntParameters
                 defaultValue = parameter.defaultValue,
                 saved = parameter.saved,
                 hasExplicitDefaultValue = parameter.hasExplicitDefaultValue,
-                bits = bits,
+                stepCount = stepCount,
                 floatMinValue = minValue,
                 floatMaxValue = maxValue,
             };
@@ -70,7 +70,7 @@ namespace Narazaka.VRChat.CompressedIntParameters
             if (string.IsNullOrEmpty(name)) yield return "name is empty";
             if (type == CompressedParameterType.Float)
             {
-                if (bits < 1 || bits > 7) yield return $"bits must be 1..7, got {bits}";
+                if (stepCount < 2 || stepCount > 128) yield return $"stepCount must be 2..128, got {stepCount}";
                 if (floatMinValue < -1f || floatMinValue > 1f) yield return $"floatMinValue must be in [-1, 1], got {floatMinValue}";
                 if (floatMaxValue < -1f || floatMaxValue > 1f) yield return $"floatMaxValue must be in [-1, 1], got {floatMaxValue}";
                 if (floatMinValue >= floatMaxValue) yield return $"floatMinValue must be less than floatMaxValue, got [{floatMinValue}, {floatMaxValue}]";
@@ -107,12 +107,13 @@ namespace Narazaka.VRChat.CompressedIntParameters
         // compressed
         public int maxValue = 1;
 
-        // Float 専用 (Phase 1)
-        public int bits = 4;
+        // Float 専用
         public float floatMinValue = -1f;
         public float floatMaxValue = 1f;
         // Float 専用 (AAPMA インストール時のみ意味を持つ)
         public bool floatSmoothing;
+        // Float 専用: 段階数 (2..128)。bits は Bits(stepCount - 1) で導出
+        public int stepCount = 16;
 
         public static int Bits(int maxValue) => maxValue == 0 ? 0 : Mathf.CeilToInt(Mathf.Log(maxValue + 1, 2));
 
@@ -159,10 +160,11 @@ namespace Narazaka.VRChat.CompressedIntParameters
 
         IEnumerable<ParameterConfig> ToFloatParameterConfigs()
         {
-            if (bits == 0) yield break;
-            var defaultIndex = FloatToIndex(defaultValue, bits, floatMinValue, floatMaxValue);
+            if (stepCount < 2) yield break;
+            var bitCount = Bits(stepCount - 1);
+            var defaultIndex = FloatToIndex(defaultValue, stepCount, floatMinValue, floatMaxValue);
 
-            for (int i = 0; i < bits; i++)
+            for (int i = 0; i < bitCount; i++)
             {
                 yield return new ParameterConfig
                 {
@@ -216,25 +218,21 @@ namespace Narazaka.VRChat.CompressedIntParameters
             return (value & (1 << bit)) != 0;
         }
 
-        public static int FloatStepCount(int bits) => 1 << bits;
-
-        public static float FloatStep(int bits, float minValue, float maxValue)
+        public static float FloatStep(int stepCount, float minValue, float maxValue)
         {
-            var n = FloatStepCount(bits);
-            return (maxValue - minValue) / (n - 1);
+            return (maxValue - minValue) / (stepCount - 1);
         }
 
-        public static int FloatToIndex(float value, int bits, float minValue, float maxValue)
+        public static int FloatToIndex(float value, int stepCount, float minValue, float maxValue)
         {
-            var n = FloatStepCount(bits);
             var clamped = Mathf.Clamp(value, minValue, maxValue);
             var t = (clamped - minValue) / (maxValue - minValue);
-            return Mathf.Clamp(Mathf.RoundToInt(t * (n - 1)), 0, n - 1);
+            return Mathf.Clamp(Mathf.RoundToInt(t * (stepCount - 1)), 0, stepCount - 1);
         }
 
-        public static float IndexToFloat(int index, int bits, float minValue, float maxValue)
+        public static float IndexToFloat(int index, int stepCount, float minValue, float maxValue)
         {
-            return minValue + index * FloatStep(bits, minValue, maxValue);
+            return minValue + index * FloatStep(stepCount, minValue, maxValue);
         }
     }
 }

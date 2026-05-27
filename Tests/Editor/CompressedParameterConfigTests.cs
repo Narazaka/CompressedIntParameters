@@ -42,37 +42,29 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
         }
 
         [Test]
-        public void FloatStepCount_Returns2PowBits()
-        {
-            Assert.AreEqual(2, CompressedParameterConfig.FloatStepCount(1));
-            Assert.AreEqual(16, CompressedParameterConfig.FloatStepCount(4));
-            Assert.AreEqual(128, CompressedParameterConfig.FloatStepCount(7));
-        }
-
-        [Test]
         public void FloatStep_TwoEndsInclusive()
         {
-            Assert.AreEqual(2f / 15f, CompressedParameterConfig.FloatStep(4, -1f, 1f), 1e-6f);
-            Assert.AreEqual(1f / 3f, CompressedParameterConfig.FloatStep(2, 0f, 1f), 1e-6f);
+            Assert.AreEqual(2f / 15f, CompressedParameterConfig.FloatStep(16, -1f, 1f), 1e-6f);
+            Assert.AreEqual(1f / 3f, CompressedParameterConfig.FloatStep(4, 0f, 1f), 1e-6f);
         }
 
         [Test]
         public void FloatToIndex_ClampsToRangeAndRounds()
         {
-            Assert.AreEqual(0, CompressedParameterConfig.FloatToIndex(-1f, 4, -1f, 1f));
-            Assert.AreEqual(15, CompressedParameterConfig.FloatToIndex(1f, 4, -1f, 1f));
-            var mid = CompressedParameterConfig.FloatToIndex(0f, 4, -1f, 1f);
+            Assert.AreEqual(0, CompressedParameterConfig.FloatToIndex(-1f, 16, -1f, 1f));
+            Assert.AreEqual(15, CompressedParameterConfig.FloatToIndex(1f, 16, -1f, 1f));
+            var mid = CompressedParameterConfig.FloatToIndex(0f, 16, -1f, 1f);
             Assert.IsTrue(mid == 7 || mid == 8);
-            Assert.AreEqual(0, CompressedParameterConfig.FloatToIndex(-2f, 4, -1f, 1f));
-            Assert.AreEqual(15, CompressedParameterConfig.FloatToIndex(2f, 4, -1f, 1f));
+            Assert.AreEqual(0, CompressedParameterConfig.FloatToIndex(-2f, 16, -1f, 1f));
+            Assert.AreEqual(15, CompressedParameterConfig.FloatToIndex(2f, 16, -1f, 1f));
         }
 
         [Test]
         public void IndexToFloat_LinearMap()
         {
-            Assert.AreEqual(-1f, CompressedParameterConfig.IndexToFloat(0, 4, -1f, 1f), 1e-6f);
-            Assert.AreEqual(1f, CompressedParameterConfig.IndexToFloat(15, 4, -1f, 1f), 1e-6f);
-            Assert.AreEqual(-1f + 7f * (2f / 15f), CompressedParameterConfig.IndexToFloat(7, 4, -1f, 1f), 1e-6f);
+            Assert.AreEqual(-1f, CompressedParameterConfig.IndexToFloat(0, 16, -1f, 1f), 1e-6f);
+            Assert.AreEqual(1f, CompressedParameterConfig.IndexToFloat(15, 16, -1f, 1f), 1e-6f);
+            Assert.AreEqual(-1f + 7f * (2f / 15f), CompressedParameterConfig.IndexToFloat(7, 16, -1f, 1f), 1e-6f);
         }
 
         [Test]
@@ -82,7 +74,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 defaultValue = 0f,
@@ -111,7 +103,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "X",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = 0f,
                 floatMaxValue = 1f,
                 defaultValue = 1f,
@@ -154,10 +146,10 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
                 localOnly = false,
                 isPrefix = false,
             };
-            var c = CompressedParameterConfig.From(src, 4, -1f, 1f);
+            var c = CompressedParameterConfig.From(src, 16, -1f, 1f);
             Assert.AreEqual(CompressedParameterType.Float, c.type);
             Assert.AreEqual("Pitch", c.name);
-            Assert.AreEqual(4, c.bits);
+            Assert.AreEqual(16, c.stepCount);
             Assert.AreEqual(-1f, c.floatMinValue);
             Assert.AreEqual(1f, c.floatMaxValue);
             Assert.AreEqual(0.5f, c.defaultValue);
@@ -168,7 +160,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
         {
             var src = new ParameterConfig { syncType = ParameterSyncType.Int };
             Assert.Throws<CompressedParameterConfig.InvalidParameterConfigInputException>(
-                () => CompressedParameterConfig.From(src, 4, -1f, 1f));
+                () => CompressedParameterConfig.From(src, 16, -1f, 1f));
         }
 
         [Test]
@@ -186,12 +178,12 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "X",
-                bits = 0,
+                stepCount = 0,
                 floatMinValue = -2f,
                 floatMaxValue = 1f,
             };
             var errors = c.ValidateForBuild().ToArray();
-            Assert.IsTrue(errors.Any(e => e.Contains("bits")));
+            Assert.IsTrue(errors.Any(e => e.Contains("stepCount")));
             Assert.IsTrue(errors.Any(e => e.Contains("floatMinValue")));
         }
 
@@ -213,6 +205,48 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
         {
             var c = new CompressedParameterConfig { type = CompressedParameterType.Int, name = "Foo", maxValue = 5 };
             Assert.IsEmpty(c.ValidateForBuild().ToArray());
+        }
+
+        [Test]
+        public void ToParameterConfigs_Float_NonPowerOfTwoStepCount()
+        {
+            // stepCount=5 → bitCount = Bits(4) = 3 (ceil(log2(5))=3)
+            // 結果: 3 bit param + 1 float = 4 件
+            var c = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "X",
+                stepCount = 5,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+            };
+            var result = c.ToParameterConfigs().ToArray();
+            Assert.AreEqual(4, result.Length);
+            for (int i = 0; i < 3; i++)
+            {
+                Assert.AreEqual($"X.bit.{i}", result[i].nameOrPrefix);
+                Assert.AreEqual(ParameterSyncType.Bool, result[i].syncType);
+            }
+            Assert.AreEqual("X", result[3].nameOrPrefix);
+            Assert.AreEqual(ParameterSyncType.Float, result[3].syncType);
+        }
+
+        [Test]
+        public void FloatStep_StepCount5_DividesRangeIntoFourIntervals()
+        {
+            // stepCount=5 → step = (max-min)/(5-1) = 0.5
+            Assert.AreEqual(0.5f, CompressedParameterConfig.FloatStep(5, -1f, 1f), 1e-6f);
+        }
+
+        [Test]
+        public void IndexToFloat_StepCount5_EnumeratesValues()
+        {
+            // stepCount=5, range=[-1, 1]: -1, -0.5, 0, 0.5, 1
+            Assert.AreEqual(-1f, CompressedParameterConfig.IndexToFloat(0, 5, -1f, 1f), 1e-6f);
+            Assert.AreEqual(-0.5f, CompressedParameterConfig.IndexToFloat(1, 5, -1f, 1f), 1e-6f);
+            Assert.AreEqual(0f, CompressedParameterConfig.IndexToFloat(2, 5, -1f, 1f), 1e-6f);
+            Assert.AreEqual(0.5f, CompressedParameterConfig.IndexToFloat(3, 5, -1f, 1f), 1e-6f);
+            Assert.AreEqual(1f, CompressedParameterConfig.IndexToFloat(4, 5, -1f, 1f), 1e-6f);
         }
 
         [Test]
@@ -250,7 +284,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 defaultValue = 0f,
@@ -268,7 +302,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 defaultValue = 0.25f,
@@ -298,7 +332,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
                 type = CompressedParameterType.Float,
                 name = "Smile",
                 remapTo = "RenamedSmile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = true,
