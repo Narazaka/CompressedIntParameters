@@ -53,4 +53,4 @@ jobs:
           - unity: 2022.3.22f1
             ma: 1.16.2
             vrcsdk-version: 3.10.3
-            aapma: 0.2.0-beta.1
+            aapma: 0.2.0-beta.3
