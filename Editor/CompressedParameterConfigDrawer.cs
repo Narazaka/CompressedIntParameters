@@ -122,14 +122,6 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             EditorGUI.BeginDisabledGroup(true);
             EditorGUI.ToggleLeft(line, T.Synced.GUIContent, true);
             EditorGUI.EndDisabledGroup();
-#if HAS_AAPMA
-            if (isFloat)
-            {
-                line.x += line.width + Spacing;
-                line.width = 100;
-                ToggleLeft(line, property.FindPropertyRelative(nameof(CompressedParameterConfig.floatSmoothing)), T.Smoothing.GUIContent);
-            }
-#endif
             EditorGUIUtility.labelWidth = 0;
         }
 
@@ -165,7 +157,6 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             public static istring Steps = new istring("Steps", "段階");
             public static istring Min = new istring("Min", "最小");
             public static istring Max = new istring("Max", "最大");
-            public static istring Smoothing = new istring("Smooth", "スムージング");
         }
     }
 }
