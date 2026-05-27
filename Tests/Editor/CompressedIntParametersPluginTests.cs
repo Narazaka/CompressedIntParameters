@@ -77,7 +77,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 3,
+                stepCount = 8,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
             };
@@ -92,7 +92,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
             };
@@ -112,7 +112,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
             };
@@ -133,7 +133,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 3,
+                stepCount = 8,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
             };
@@ -148,7 +148,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
             };
@@ -165,13 +165,47 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
         }
 
         [Test]
+        public void MakeFloatLocalLayer_NonPowerOfTwoStepCount_StateCountMatches()
+        {
+            // stepCount=5 → state 数 = 5 + Start = 6
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "X",
+                stepCount = 5,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+            };
+            var layer = Plugin.MakeFloatLocalLayer(p);
+            Assert.AreEqual(6, layer.stateMachine.states.Length);
+        }
+
+        [Test]
+        public void MakeFloatRemoteLayer_NonPowerOfTwoStepCount_StateCountMatches()
+        {
+            var p = new CompressedParameterConfig
+            {
+                type = CompressedParameterType.Float,
+                name = "X",
+                stepCount = 5,
+                floatMinValue = -1f,
+                floatMaxValue = 1f,
+            };
+            var layer = Plugin.MakeFloatRemoteLayer(p);
+            Assert.AreEqual(6, layer.stateMachine.states.Length);
+            // bits=3 なので各 state は 3 個の bit exit transition を持つ
+            var state0 = layer.stateMachine.states.Single(s => s.state.name == "0").state;
+            Assert.AreEqual(3, state0.transitions.Length);
+        }
+
+        [Test]
         public void MakeFloatRemoteLayer_SmoothingEnabled_DriverWritesToRawName()
         {
             var p = new CompressedParameterConfig
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = true,
@@ -193,7 +227,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = false,
@@ -211,7 +245,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = true,
@@ -237,7 +271,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 2,
+                stepCount = 4,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = false,
@@ -257,7 +291,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "Smile",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = true,
@@ -266,7 +300,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "NoSmooth",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = false,
@@ -301,7 +335,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "A",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = 0f,
                 floatMaxValue = 1f,
                 floatSmoothing = true,
@@ -310,7 +344,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "B",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -0.5f,
                 floatMaxValue = 0.5f,
                 floatSmoothing = true,
@@ -348,7 +382,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Tests
             {
                 type = CompressedParameterType.Float,
                 name = "A",
-                bits = 4,
+                stepCount = 16,
                 floatMinValue = -1f,
                 floatMaxValue = 1f,
                 floatSmoothing = false,

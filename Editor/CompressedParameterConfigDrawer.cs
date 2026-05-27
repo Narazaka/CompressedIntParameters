@@ -6,16 +6,6 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
     [CustomPropertyDrawer(typeof(CompressedParameterConfig))]
     public class CompressedParameterConfigDrawer : PropertyDrawer
     {
-        static readonly string[] FloatPrecisionLabels = new[]
-        {
-            "2段階 (1bit)",
-            "4段階 (2bit)",
-            "8段階 (3bit)",
-            "16段階 (4bit)",
-            "32段階 (5bit)",
-            "64段階 (6bit)",
-            "128段階 (7bit)",
-        };
 
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
@@ -24,27 +14,18 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             var typeProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.type));
             var isFloat = typeProp.enumValueIndex == (int)CompressedParameterType.Float;
 
-            // Row 1: name | type | (Int: maxValue + N段階(Mbit)) or (Float: N段階(Mbit) popup + min + max)
+            // Row 1 layout:
+            //   Int:   name | maxValue 110 | {N}bit 30 (label) | type 60
+            //   Float: name | Min 60 | Max 60 | stepCount 70 | {N}bit 30 (label) | type 60
             var line = position;
-            line.width = position.width - 60 - (isFloat ? 100 + 60 + 60 + Spacing * 3 : 110 + 60 + Spacing * 2) - Spacing;
+            line.width = position.width
+                - (isFloat ? 60 + 60 + 70 + 30 + 60 + Spacing * 4 : 110 + 30 + 60 + Spacing * 2)
+                - Spacing;
             EditorGUI.PropertyField(line, property.FindPropertyRelative(nameof(CompressedParameterConfig.name)), GUIContent.none);
-
-            line.x += line.width + Spacing;
-            line.width = 60;
-            EditorGUI.PropertyField(line, typeProp, GUIContent.none);
 
             line.x += line.width + Spacing;
             if (isFloat)
             {
-                line.width = 100;
-                var bitsProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.bits));
-                if (bitsProp.intValue < 1) bitsProp.intValue = 1;
-                if (bitsProp.intValue > 7) bitsProp.intValue = 7;
-                EditorGUI.BeginChangeCheck();
-                var newIndex = EditorGUI.Popup(line, bitsProp.intValue - 1, FloatPrecisionLabels);
-                if (EditorGUI.EndChangeCheck()) bitsProp.intValue = newIndex + 1;
-
-                line.x += line.width + Spacing;
                 line.width = 60;
                 var minProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.floatMinValue));
                 EditorGUIUtility.labelWidth = 25;
@@ -57,6 +38,23 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 EditorGUIUtility.labelWidth = 25;
                 EditorGUI.PropertyField(line, maxProp, T.Max.GUIContent);
                 maxProp.floatValue = Mathf.Clamp(maxProp.floatValue, -1f, 1f);
+
+                line.x += line.width + Spacing;
+                line.width = 70;
+                var stepCountProp = property.FindPropertyRelative(nameof(CompressedParameterConfig.stepCount));
+                EditorGUIUtility.labelWidth = 35;
+                EditorGUI.PropertyField(line, stepCountProp, T.Steps.GUIContent);
+                if (stepCountProp.intValue < 2) stepCountProp.intValue = 2;
+                if (stepCountProp.intValue > 128) stepCountProp.intValue = 128;
+
+                line.x += line.width + Spacing;
+                line.width = 30;
+                var bitCount = CompressedParameterConfig.Bits(stepCountProp.intValue - 1);
+                EditorGUI.LabelField(line, $"{bitCount}bit");
+
+                line.x += line.width + Spacing;
+                line.width = 60;
+                EditorGUI.PropertyField(line, typeProp, GUIContent.none);
             }
             else
             {
@@ -68,10 +66,12 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                 if (maxValue.intValue > 127) maxValue.intValue = 127;
 
                 line.x += line.width + Spacing;
+                line.width = 30;
+                EditorGUI.LabelField(line, $"{CompressedParameterConfig.Bits(maxValue.intValue)}bit");
+
+                line.x += line.width + Spacing;
                 line.width = 60;
-                EditorGUI.BeginDisabledGroup(true);
-                EditorGUI.Popup(line, 0, new[] { $"{CompressedParameterConfig.Bits(maxValue.intValue)}bitInt" });
-                EditorGUI.EndDisabledGroup();
+                EditorGUI.PropertyField(line, typeProp, GUIContent.none);
             }
 
             position.y += EditorGUIUtility.singleLineHeight + EditorGUIUtility.standardVerticalSpacing;
@@ -162,7 +162,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
             public static istring Saved = new istring("Saved", "保存する");
             public static istring Synced = new istring("Synced", "同期する");
             public static istring OverrideAnimatorDefaults = new istring("Override Animator Defaults", "アニメーターでの初期値を設定");
-            public static istring Bits = new istring("Bits", "ビット");
+            public static istring Steps = new istring("Steps", "段階");
             public static istring Min = new istring("Min", "最小");
             public static istring Max = new istring("Max", "最大");
             public static istring Smoothing = new istring("Smooth", "スムージング");

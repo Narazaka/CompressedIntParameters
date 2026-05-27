@@ -105,7 +105,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
         AnimatorController GenerateAnimator(CompressedIntParameters ciParameters)
         {
             var layers = ciParameters.parameters
-                .Where(p => p.type == CompressedParameterType.Int ? p.maxValue > 0 : p.bits > 0)
+                .Where(p => p.type == CompressedParameterType.Int ? p.maxValue > 0 : p.stepCount > 0)
                 .SelectMany(p => p.type == CompressedParameterType.Float
                     ? new[] { MakeFloatLocalLayer(p), MakeFloatRemoteLayer(p) }
                     : new[] { MakeLocalLayer(p), MakeRemoteLayer(p) });
@@ -255,9 +255,9 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         internal AnimatorControllerLayer MakeFloatLocalLayer(CompressedParameterConfig p)
         {
-            var bits = p.bits;
-            var stepCount = CompressedParameterConfig.FloatStepCount(bits);
-            var step = CompressedParameterConfig.FloatStep(bits, p.floatMinValue, p.floatMaxValue);
+            var stepCount = p.stepCount;
+            var bits = CompressedParameterConfig.Bits(stepCount - 1);
+            var step = CompressedParameterConfig.FloatStep(stepCount, p.floatMinValue, p.floatMaxValue);
 
             float ThresholdLow(int i) => p.floatMinValue + (i - 0.5f) * step;
             float ThresholdHigh(int i) => p.floatMinValue + (i + 0.5f) * step;
@@ -379,12 +379,12 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
 
         internal AnimatorControllerLayer MakeFloatRemoteLayer(CompressedParameterConfig p)
         {
-            var bits = p.bits;
-            var stepCount = CompressedParameterConfig.FloatStepCount(bits);
+            var stepCount = p.stepCount;
+            var bits = CompressedParameterConfig.Bits(stepCount - 1);
 
             var states = Enumerable.Range(0, stepCount).Select(index =>
             {
-                var floatValue = CompressedParameterConfig.IndexToFloat(index, bits, p.floatMinValue, p.floatMaxValue);
+                var floatValue = CompressedParameterConfig.IndexToFloat(index, stepCount, p.floatMinValue, p.floatMaxValue);
                 var state = new AnimatorState
                 {
                     name = index.ToString(),
