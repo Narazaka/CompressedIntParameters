@@ -29,6 +29,8 @@ https://github.com/Narazaka/CompressedIntParameters/releases/latest から `net.
 
 ## Changelog
 
+- 1.1.0-beta.3
+  - (beta breaking) floatの段階をbitごと固定ではなく任意調整可能に
 - 1.1.0-beta.2
   - AAPMA連携 (Smoothing) 対応
 - 1.1.0-beta.1
