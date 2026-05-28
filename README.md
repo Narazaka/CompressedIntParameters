@@ -21,6 +21,8 @@ https://github.com/Narazaka/CompressedIntParameters/releases/latest から `net.
 
 ## Changelog
 
+- 1.1.0-beta.5
+  - ParameterProviderをfloat対応に修正
 - 1.1.0-beta.4
   - Smoothing機能を削除（AAPの制約上妥当な実装ができないため）
 - 1.1.0-beta.3
