@@ -26,7 +26,7 @@ namespace Narazaka.VRChat.CompressedIntParameters.Editor
                     ParameterNamespace.Animator,
                     _component,
                     CompressedIntParametersPlugin.Instance,
-                    p.syncType == ParameterSyncType.Bool ? AnimatorControllerParameterType.Bool : AnimatorControllerParameterType.Int
+                    p.syncType == ParameterSyncType.Bool ? AnimatorControllerParameterType.Bool : p.syncType == ParameterSyncType.Float ? AnimatorControllerParameterType.Float : AnimatorControllerParameterType.Int
                     )
                 {
                     DefaultValue = p.defaultValue,
