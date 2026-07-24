@@ -1,4 +1,4 @@
-# Compressed Int Parameters
+# Compressed Parameters
 
 同期Intパラメーターを最大値に合わせて圧縮するMA Parameters
 
@@ -17,10 +17,12 @@ https://github.com/Narazaka/CompressedIntParameters/releases/latest から `net.
 
 ## Usage
 
-`Compressed Int Parameters` をAdd Componentし、`MA Parameters` と同じように使用します。
+`Compressed Parameters` をAdd Componentし、`MA Parameters` と同じように使用します。
 
 ## Changelog
 
+- 1.1.0
+  - float対応し、パッケージ・コンポーネント名をCompressed Parametersに変更。
 - 1.1.0-beta.5
   - ParameterProviderをfloat対応に修正
 - 1.1.0-beta.4

@@ -1,8 +1,8 @@
 {
   "name": "net.narazaka.vrchat.compressed-int-parameters",
-  "version": "1.1.0-beta.5",
-  "displayName": "Compressed Int Parameters",
-  "description": "Compressed Int Parameters",
+  "version": "1.1.0",
+  "displayName": "Compressed Parameters",
+  "description": "Compressed Int/Float Parameters",
   "author": {
     "name": "Narazaka",
     "url": "https://github.com/Narazaka"
