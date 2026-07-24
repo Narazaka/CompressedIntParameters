@@ -1,6 +1,6 @@
 # Compressed Parameters
 
-同期Intパラメーターを最大値に合わせて圧縮するMA Parameters
+同期Int/Floatパラメーターを最大値に合わせて圧縮するMA Parameters
 
 ## Install
 
